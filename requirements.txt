@@ -1,3 +1,4 @@
+lgp>=0.0.2
 numpy>=1.18.1
 pandas>=0.25.3
 scikit-learn>=0.22.1
