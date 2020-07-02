@@ -10,7 +10,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from data_processing_utils._processing_funcs import ResultProcessing
-from flask_caching import Cache
 from dash.exceptions import PreventUpdate
 
 from dash_extensions.callback import CallbackCache, DiskCache
