@@ -31,6 +31,19 @@ class ResultProcessing:
     def get_original_dataframe(self):
         return pd.read_csv(self.original_data_file_path)
 
+    @staticmethod
+    def read_dataset_names(df):
+        names = df.columns[1:].values
+        return names
+
+    @staticmethod
+    def read_dataset_X_y(df):
+        X = df.iloc[:, 1:].values
+        scaler = MinMaxScaler((-1, 1))
+        X = scaler.fit_transform(X)
+        y = df['category'].values
+        return X, y
+
     def readDataRuiJin(self):
         df = self.get_original_dataframe()
         names = df.columns[1:].values

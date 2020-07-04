@@ -1,5 +1,6 @@
 import dash
 import numpy as np
+import pandas as pd
 import base64
 import datetime
 import pickle
@@ -25,28 +26,10 @@ app.title = 'LGP'
 # Create (server side) disk cache.
 cc = CallbackCache(cache=DiskCache(cache_dir="cache_dir"), expire_after=10)
 
-# setting up get global_result class
-# global_result = ResultProcessing("dataset/RuiJin_Processed.csv", "dataset/lgp_filtered.pkl")
-# global_result.load_models()
-# X, y, names = global_result.X, global_result.y, global_result.names
-# index_list = [i for i in range(len(names))]
-# available_indicators = list(zip(index_list, names))
-
-# global variable will cause problems in multi-user web, fix later
-original_result = ResultProcessing("dataset/RuiJin_Processed.csv")
-global_result = 0
-X, y, names = 0, 0, 0
-index_list = 0
-tttest = ResultProcessing("dataset/RuiJin_Processed.csv")
-X, y, names = tttest.X, tttest.y, tttest.names
-index_list = [i for i in range(len(names))]
-available_indicators = list(zip(index_list, names))
-
 server = app.server
 
 # need to suppress bc using dynamic tabs
 app.config['suppress_callback_exceptions'] = True
-
 
 # -------------     layout code    ------------------
 app.layout = html.Div(
@@ -54,12 +37,13 @@ app.layout = html.Div(
         # The memory store reverts to the default on every page refresh
         dcc.Loading(dcc.Store(id='filtered_result_store')),
         dcc.Loading(dcc.Store(id='raw_result_store')),
+        dcc.Loading(dcc.Store(id='ori-data-store')),
 
         # --- headline ---
         # empty Div to trigger javascript file for graph resizing
-        html.Div(id='signal', style={'display': 'none'}),
+        #html.Div(id='signal', style={'display': 'none'}),
 
-        # website title
+        # --- website title ---
         html.Div(
             [
                 html.Div(
@@ -108,13 +92,25 @@ app.layout = html.Div(
             className="row flex-display",
             style={"margin-bottom": "25px"},
         ),
-        # File upload
+        # --- File upload ---
         html.Div([
 
             dcc.Upload(
-                id='upload-data',
+                id='upload-result-data',
                 children=html.Div([
                     html.H6('Upload pickle result file here'),
+                    'Drag and Drop or ',
+                    html.A('Select Files')
+                ]),
+                className="pretty_container six columns",
+                # Allow multiple files to be uploaded
+                multiple=True
+            ),
+
+            dcc.Upload(
+                id='upload-ori',
+                children=html.Div([
+                    html.H6('Upload original dataset csv file here'),
                     'Drag and Drop or ',
                     html.A('Select Files')
                 ]),
@@ -126,23 +122,36 @@ app.layout = html.Div(
             html.A(
                 html.Button(
                     'Download sample pickle result data',
-                    id='speck-file-download',
                     className='control-download'
                 ),
-                href=os.path.join('assets', 'sample_data', 'lgp_sample.pkl'),
+                href=os.path.join('assets', 'sample_result_data', 'lgp_sample.pkl'),
                 download='lgp_sample.pkl'
             ),
+
+            html.A(
+                html.Button(
+                    'Download sample csv ori data',
+                    className='control-download'
+                ),
+                href=os.path.join('assets', 'sample_ori_data', 'sample_alzheimer_vs_normal.csv'),
+                download='lgp_sample.pkl'
+            ),
+
+            html.Button(
+                "Visualize Result",
+                id="main-render-button",
+            )
         ],
         ),
         # main page
-        html.Div(id='main_visualization_content')
+        html.Div(id='main-visualization-content')
 
     ],
     id="mainContainer",
     style={"display": "flex", "flex-direction": "column"}
 )
 
-def render_main_visualization_layout():
+def render_main_visualization_layout(available_indicators):
     return html.Div([
         # ---------- sliders/filters -----------
         html.Div([
@@ -247,9 +256,9 @@ def render_main_visualization_layout():
         html.Div([
             html.Div([
                 dcc.Markdown('''
-                    **Click on co-occurrence heat map to see two feature distribution in original data.**    
-                    Or manually choose X axis / Y axis for two distribution graph on dropdown manual.
-                '''),
+                            **Click on co-occurrence heat map to see two feature distribution in original data.**    
+                            Or manually choose X axis / Y axis for two distribution graph on dropdown manual.
+                        '''),
 
                 html.Div([
                     dcc.Dropdown(
@@ -257,12 +266,6 @@ def render_main_visualization_layout():
                         options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in available_indicators],
                         value='0'
                     ),
-                    dcc.RadioItems(
-                        id='crossfilter-xaxis-type',
-                        options=[{'label': i, 'value': i} for i in ['Linear']],
-                        value='Linear',
-                        labelStyle={'display': 'inline-block'}
-                    )
                 ], style={'width': '49%', 'display': 'inline-block'},
 
                 ),
@@ -273,18 +276,12 @@ def render_main_visualization_layout():
                         options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in available_indicators],
                         value='1'
                     ),
-                    dcc.RadioItems(
-                        id='crossfilter-yaxis-type',
-                        options=[{'label': i, 'value': i} for i in ['Linear']],
-                        value='Linear',
-                        labelStyle={'display': 'inline-block'}
-                    )
                 ], style={'width': '49%', 'float': 'right', 'display': 'inline-block'},
                 )
             ],
                 className="pretty_container twelve columns"
             ),
-            ],
+        ],
             className="row flex-display",
             style={'align-items': 'center', 'justify-content': 'center'},
         ),
@@ -359,8 +356,10 @@ def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data):
      Output("filtered_by_accuracy_text", "children"),
      Output("filtered_by_len_text", "children")],
     [Input('prog-len-filter-slider', 'value'),
-     Input('filtered_result_store', 'data')])
-def update_occurrence_graph(pro_len, result_data):
+     Input('filtered_result_store', 'data'),
+     Input('ori-data-store', 'data')])
+def update_occurrence_graph(pro_len, result_data, ori_data):
+    names = ResultProcessing.read_dataset_names(ori_data)
     result_data.calculate_featureList_and_calcvariableList()
     features, num_of_occurrences, cur_feature_num = result_data.get_occurrence_from_feature_list_given_length(pro_len)
     hover_text = [names[i] for i in features]
@@ -385,8 +384,10 @@ def update_occurrence_graph(pro_len, result_data):
 @cc.callback(
     Output('co-occurrence-graph', 'figure'),
     [Input('prog-len-filter-slider', 'value'),
-     Input('filtered_result_store', 'data')])
-def update_co_occurrence_graph(pro_len, result_data):
+     Input('filtered_result_store', 'data'),
+     Input('ori-data-store', 'data')])
+def update_co_occurrence_graph(pro_len, result_data, ori_data):
+    names = ResultProcessing.read_dataset_names(ori_data)
     #result_data = jsonpickle.decode(result_data)
     result_data.calculate_featureList_and_calcvariableList()
     if pro_len > 1:
@@ -419,8 +420,11 @@ def update_co_occurrence_graph(pro_len, result_data):
     Output('crossfilter-indicator-scatter', 'figure'),
     [Input('crossfilter-xaxis-column', 'value'),
      Input('crossfilter-yaxis-column', 'value'),
-     Input('co-occurrence-graph', 'clickData')])
-def update_feature_comparision_graph_using_filters(xaxis_column_index, yaxis_column_index, co_click_data):
+     Input('co-occurrence-graph', 'clickData'),
+     Input('ori-data-store', 'data')])
+def update_feature_comparision_graph_using_filters(xaxis_column_index, yaxis_column_index, co_click_data, ori_data):
+    X, y  = ResultProcessing.read_dataset_X_y(ori_data)
+    names = ResultProcessing.read_dataset_names(ori_data)
     ctx = dash.callback_context
     trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
     if trigger_id == 'crossfilter-xaxis-column' or trigger_id == 'crossfilter-yaxis-column':
@@ -429,7 +433,8 @@ def update_feature_comparision_graph_using_filters(xaxis_column_index, yaxis_col
     elif trigger_id == 'co-occurrence-graph':
         xaxis_column_index = int(co_click_data['points'][0]['x'][1:])
         yaxis_column_index = int(co_click_data['points'][0]['y'][1:])
-    type_name = ['AD', 'Normal']
+    # type_name = ['AD', 'Normal']
+    unique_label = ori_data['category'].unique()
     return {
         'data': [dict(
             x=X[:, int(xaxis_column_index)][y == type],
@@ -440,8 +445,8 @@ def update_feature_comparision_graph_using_filters(xaxis_column_index, yaxis_col
                 'opacity': 0.5,
                 'line': {'width': 0.5, 'color': 'white'},
             },
-            name=type_name[type]
-        ) for type in [0, 1]
+            name=type
+        ) for type in unique_label
         ],
         'layout': dict(
             xaxis={
@@ -468,20 +473,17 @@ def update_model_click_data(clickData, result_data):
         i = int(clickData['points'][0]['x'][1:])
         return result_data.convert_program_str_repr(result_data.model_list[i])
 
-def parse_contents(contents, filename):
+# ------   upload data section  ----------
+def parse_contents_result(contents, filename):
     content_type, content_string = contents.split(',')
 
     decoded = base64.b64decode(content_string)
     try:
         if 'pkl' in filename:
-            global original_result, global_result, X, y, names, index_list, available_indicators
             # initialize staff
-            original_result = ResultProcessing("dataset/RuiJin_Processed.csv")
-            original_result.load_models_directly(io.BytesIO(decoded))
-            X, y, names = original_result.X, original_result.y, original_result.names
-            index_list = [i for i in range(len(names))]
-            available_indicators = list(zip(index_list, names))
-            global_result = copy.deepcopy(original_result)
+            result = ResultProcessing("dataset/RuiJin_Processed.csv")
+            result.load_models_directly(io.BytesIO(decoded))
+            return result
     except Exception as e:
         print(e)
         return html.Div([
@@ -489,41 +491,72 @@ def parse_contents(contents, filename):
         ],
         )
 
-    return global_result
-
 
 @cc.cached_callback([Output('raw_result_store', 'data')],
-              [Input('upload-data', 'contents')],
-              [State('upload-data', 'filename')])
+              [Input('upload-result-data', 'contents')],
+              [State('upload-result-data', 'filename')])
 def update_file_output(contents, filename):
     # display read file status and update main visualization Div
     if contents is None:
         raise PreventUpdate
-    global_result = parse_contents(contents[0], filename[0])
+    global_result = parse_contents_result(contents[0], filename[0])
     return global_result
 
-@cc.callback([Output('main_visualization_content', 'children')],
-              [Input('upload-data', 'contents')])
-def update_page_output(contents):
-    # display read file status and update main visualization Div
+def parse_contents_ori(contents, filename):
+    content_type, content_string = contents.split(',')
+    decoded = base64.b64decode(content_string)
+    try:
+        if 'csv' in filename:
+            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+            return df
+    except Exception as e:
+        print(e)
+        return html.Div([
+            'There was an error processing this file.'
+        ],
+        )
+
+
+@cc.cached_callback([Output('ori-data-store', 'data')],
+              [Input('upload-ori', 'contents')],
+              [State('upload-ori', 'filename')])
+def update_file_output(contents, filename):
     if contents is None:
         raise PreventUpdate
-    return render_main_visualization_layout()
+    ori_data = parse_contents_ori(contents[0], filename[0])
+    return ori_data
+
+# --- end upload data section ---
+
+@cc.callback([Output('main-visualization-content', 'children')],
+              [Input('main-render-button', 'n_clicks'),
+               Input('ori-data-store', 'data')])
+def update_main_page(n_clicks, ori_data):
+    names = ResultProcessing.read_dataset_names(ori_data)
+    index_list = [i for i in range(len(names))]
+    available_indicators = list(zip(index_list, names))
+    if n_clicks == 0:
+        raise PreventUpdate
+    else:
+        return render_main_visualization_layout(available_indicators)
 
 @cc.callback([Output('updatemode-output-testing-acc', 'children'),
-              Output('ori_model_count', 'children')],
+             ],
               [Input('testing-acc-filter-slider', 'value'),
-               Input('raw_result_store', 'data')])
-def update_tesing_filter_value_and_ori_count(value, raw_result):
+               ])
+def update_tesing_filter_value(value ):
     acc_text = str(value) + "% is used to filter models"
-    return acc_text, str(len(raw_result.model_list))
+    return acc_text
 
 
-@cc.callback(Output('updatemode-output-proglenfilter', 'children'),
-              [Input('prog-len-filter-slider', 'value')])
-def display_program_length_filter_value(value):
+@cc.callback([Output('updatemode-output-proglenfilter', 'children'),
+              Output('ori_model_count', 'children')],
+              [Input('prog-len-filter-slider', 'value'),
+               Input('raw_result_store', 'data')])
+def display_program_length_filter_value_and_ori_count(value, raw_result ):
     # program length filter --> effective features text display
-    return "Models with " + str(value) + " effective features are used"
+    text = "Models with " + str(value) + " effective features are used"
+    return text, str(len(raw_result.model_list))
 
 @cc.callback([Output('prog-len-filter-slider', 'options')],
               [Input('filtered_result_store', 'data')])
