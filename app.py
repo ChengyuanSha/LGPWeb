@@ -8,6 +8,7 @@ import os
 import copy
 import io
 import dash_core_components as dcc
+import dash_cytoscape as cyto
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from data_processing_utils._processing_funcs import ResultProcessing
@@ -35,8 +36,8 @@ app.config['suppress_callback_exceptions'] = True
 app.layout = html.Div(
     [
         # The memory store reverts to the default on every page refresh
-        dcc.Loading(dcc.Store(id='filtered_result_store')),
-        dcc.Loading(dcc.Store(id='raw_result_store')),
+        dcc.Loading(dcc.Store(id='filtered-result-store')),
+        dcc.Loading(dcc.Store(id='raw-result-store')),
         dcc.Loading(dcc.Store(id='ori-data-store')),
 
         # --- headline ---
@@ -316,13 +317,18 @@ def render_main_visualization_layout(available_indicators):
         ],
         className="row flex-display"
         ),
+
+        # --- network analysis ----
+        html.Div(id='network'),
+
+
     ])
 
 @cc.callback(
     Output('filtered-accuracy-scatter', 'figure'),
     [Input('filtered-occurrences-scatter', 'clickData'),
      Input('prog-len-filter-slider', 'value'),
-     Input('filtered_result_store', 'data')])
+     Input('filtered-result-store', 'data')])
 def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data):
     if clickData is not None:
         # result_data = jsonpickle.decode(result_data)
@@ -356,7 +362,7 @@ def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data):
      Output("filtered_by_accuracy_text", "children"),
      Output("filtered_by_len_text", "children")],
     [Input('prog-len-filter-slider', 'value'),
-     Input('filtered_result_store', 'data'),
+     Input('filtered-result-store', 'data'),
      Input('ori-data-store', 'data')])
 def update_occurrence_graph(pro_len, result_data, ori_data):
     names = ResultProcessing.read_dataset_names(ori_data)
@@ -384,7 +390,7 @@ def update_occurrence_graph(pro_len, result_data, ori_data):
 @cc.callback(
     Output('co-occurrence-graph', 'figure'),
     [Input('prog-len-filter-slider', 'value'),
-     Input('filtered_result_store', 'data'),
+     Input('filtered-result-store', 'data'),
      Input('ori-data-store', 'data')])
 def update_co_occurrence_graph(pro_len, result_data, ori_data):
     names = ResultProcessing.read_dataset_names(ori_data)
@@ -466,7 +472,7 @@ def update_feature_comparision_graph_using_filters(xaxis_column_index, yaxis_col
 @cc.callback(
     Output('model-click-data', 'children'),
     [Input('filtered-accuracy-scatter', 'clickData'),
-     Input('filtered_result_store', 'data')])
+     Input('filtered-result-store', 'data')])
 def update_model_click_data(clickData, result_data):
     #result_data = jsonpickle.decode(result_data)
     if clickData is not None:
@@ -492,7 +498,7 @@ def parse_contents_result(contents, filename):
         )
 
 
-@cc.cached_callback([Output('raw_result_store', 'data')],
+@cc.cached_callback([Output('raw-result-store', 'data')],
               [Input('upload-result-data', 'contents')],
               [State('upload-result-data', 'filename')])
 def update_file_output(contents, filename):
@@ -552,22 +558,22 @@ def update_tesing_filter_value(value ):
 @cc.callback([Output('updatemode-output-proglenfilter', 'children'),
               Output('ori_model_count', 'children')],
               [Input('prog-len-filter-slider', 'value'),
-               Input('raw_result_store', 'data')])
+               Input('raw-result-store', 'data')])
 def display_program_length_filter_value_and_ori_count(value, raw_result ):
     # program length filter --> effective features text display
     text = "Models with " + str(value) + " effective features are used"
     return text, str(len(raw_result.model_list))
 
 @cc.callback([Output('prog-len-filter-slider', 'options')],
-              [Input('filtered_result_store', 'data')])
+              [Input('filtered-result-store', 'data')])
 def set_prog_len_radiobutton_and_update_filtered_data(result_data):
     result_data.calculate_featureList_and_calcvariableList()
     length_list = sorted(list(set([len(i) for i in result_data.feature_list])))
     return [{'label': str(i) , 'value': i} for i in length_list]
 
-@cc.cached_callback([Output('filtered_result_store', 'data')],
+@cc.cached_callback([Output('filtered-result-store', 'data')],
              [Input('testing-acc-filter-slider', 'value'),
-              Input('raw_result_store', 'data')])
+              Input('raw-result-store', 'data')])
 def update_filtered_data(testing_acc, result_data):
     result_data.model_list = [i for i in result_data.model_list if
                                 float(i.testingAccuracy) >= ((testing_acc) / 100)]
@@ -578,6 +584,54 @@ def update_filtered_data(testing_acc, result_data):
     [Input('prog-len-filter-slider', 'options')])
 def set_prog_len_value(available_options):
     return available_options[0]['value']
+
+@cc.callback(Output('network', 'children'),
+             [Input('filtered-result-store', 'data'),
+              Input('ori-data-store', 'data')])
+def create_network(result_data, ori_data):
+    names = ResultProcessing.read_dataset_names(ori_data)
+    df = result_data.get_network_data(names)
+    nodes = [
+        {
+            'data': {'id': node, 'label': node},
+            'position': {'x': np.random.randint(0, 100), 'y': np.random.randint(0, 100)}
+        }
+        for node in df['source'].unique()
+    ]
+    edges = [
+        {'data': {'source': df['source'][index], 'target': df['target'][index], 'weight': df['weight'][index]}}
+        for index, row in df.iterrows()
+    ]
+    elements = nodes + edges
+    return cyto.Cytoscape(
+            id='cytoscape-layout-1',
+            elements=elements,
+            style={'width': '100%', 'height': '350px'},
+            layout={
+                'name': 'circle'
+            },
+            stylesheet=[
+                {
+                    'selector': 'node',
+                    'style': {
+                        'label': 'data(label)'
+                    }
+                },
+                {
+                    'selector': 'edge',
+                    'style': {
+                        'label': 'data(weight)'
+                    }
+                },
+                {
+                    'selector': '[weight > 0]',
+                    'style': {
+                        'line-color': 'black'
+                    }
+                }
+            ]
+    )
+
 
 
 cc.register(app)
