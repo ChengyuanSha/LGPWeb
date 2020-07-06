@@ -218,7 +218,7 @@ class ResultProcessing:
         top = int(len(co_occurence_rank) * 0.03) # get top 3%
         co_occurence_rank = sorted(co_occurence_rank, key=lambda x: x[2])[::-1]
         network_df = pd.DataFrame.from_records(co_occurence_rank[:top])
-        network_df.columns = ['source', 'target', 'weight']
+        network_df.columns = ['f1', 'f2', 'weight']
         return network_df
 
 if __name__ == '__main__':
@@ -229,8 +229,10 @@ if __name__ == '__main__':
     result.calculate_featureList_and_calcvariableList()
 
     df = result.get_network_data(names)
-    for index, row in df.iterrows():
-        print(df['source'][index])
+    print(df['source'].unique())
+    print(np.unique(df[['f1', 'f2']].values))
+    # for index, row in df.iterrows():
+    #     print(df['source'][index])
 
     # prog_index, acc_scores =  result.get_accuracy_given_length(1)
 

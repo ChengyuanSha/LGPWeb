@@ -92,6 +92,10 @@ app.layout = html.Div(
         ),
         # --- File upload ---
         html.Div([
+            dcc.Markdown(
+            '''
+            ##### Upload your data below. The data will be deleted after you refresh the page.
+            '''),
             # pickle file upload
             html.Div([
                 dcc.Upload(
@@ -135,6 +139,7 @@ app.layout = html.Div(
                 ],
                 className="row"
             ),
+            html.Br(),
             # sample file link
             html.Div([
                 html.A(
@@ -165,7 +170,7 @@ app.layout = html.Div(
                 ],
                 className="row"
             ),
-
+            html.Br(),
         ],
         ),
         # main page
@@ -182,7 +187,7 @@ def render_main_visualization_layout(available_indicators):
         html.Div([
 
             html.Div([
-                html.H6('Choose testing set accuracy threshold to filter'),
+                html.H6('Choose testing set accuracy threshold to filter models'),
 
                 dcc.Slider(
                     id='testing-acc-filter-slider',
@@ -200,37 +205,32 @@ def render_main_visualization_layout(available_indicators):
             ),
 
             html.Div([
-                html.H6('Choose number of Feature in a Program'),
+                html.H6('Choose number of features in a Program'),
 
-                # dcc.Slider(id='prog-len-filter-slider',marks={int(each_len): 'Len' + str(each_len) for each_len in [1,2]}),
                 dcc.RadioItems(id='prog-len-filter-slider', labelStyle={'display': 'inline-block'}),
-                # html.Div([dcc.Slider(id='slider')], id='slider-keeper'),  # dummy slider
-                # html.Div(id='prog-len-filter-slider'),
+
                 html.Div(id='updatemode-output-proglenfilter', style={'margin-top': 20})
             ],
                 className="pretty_container six columns",
             ),
 
         ],
-            style={'align-items': 'center', 'justify-content': 'center'},
             className="row container-display",
         ),
-
+        # --- three info box ---
         html.Div(
             [
                 html.Div(
-                    #[html.H6(str(len(original_result.model_list))), html.P("Original Model Count")],
-                    #[html.H6(str(len(original_result.model_list))), html.P("Original Model Count")],
-                    [html.H6(id="ori_model_count"), html.P("Original Model Count")],
-                    className="mini_container",
+                    [html.H6(id="ori_model_count"), html.P("Original Models Count")],
+                    className="pretty_container three columns",
                 ),
                 html.Div(
                     [html.H6(id="filtered_by_accuracy_text"), html.P("Model Count After Filtered by Testing Set Accuracy")],
-                    className="mini_container",
+                    className="pretty_container four columns",
                 ),
                 html.Div(
-                    [html.H6(id="filtered_by_len_text"), html.P("Model Count After Filtered by Accuracy and Number of Feature")],
-                    className="mini_container",
+                    [html.H6(id="filtered_by_len_text"), html.P("Model Count After Filtered by Accuracy & Number of Feature")],
+                    className="pretty_container four columns",
                 ),
             ],
             className="row container-display",
@@ -370,7 +370,7 @@ def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data):
                     },
                 ],
                 'layout': {
-                    'title': 'Model accuracy containing feature ' + str(feature_num) + ' with' + str(prog_len) + ' features',
+                    'title': 'Model accuracy containing feature ' + str(feature_num) + ' with ' + str(prog_len) + ' features',
                     'xaxis': {'title': 'Program feature index'},
                     'yaxis': {'title': 'Num of occurrences'},
                     'clickmode': 'event+select'
@@ -620,52 +620,55 @@ def create_network(result_data, ori_data):
             'data': {'id': node, 'label': node},
             'position': {'x': np.random.randint(0, 100), 'y': np.random.randint(0, 100)}
         }
-        for node in df['source'].unique()
+        for node in np.unique(df[['f1', 'f2']].values)
     ]
     edges = [
-        {'data': {'source': df['source'][index], 'target': df['target'][index], 'weight': df['weight'][index]}}
+        {'data': {'source': df['f1'][index], 'target': df['f2'][index], 'weight': df['weight'][index]}}
         for index, row in df.iterrows()
     ]
     elements = nodes + edges
-    return html.Div([
-                dcc.Markdown(
-                    '''
-                    #### Network of top 3% most common metabolite pairs 
-                    Each vertex is a feature. Each edge means there are interactions between these features.
-                    The importance is shown as the number on the edge.
-                    '''
-                ),
+    return html.Div(
+                html.Div([
+                        dcc.Markdown(
+                            '''
+                            #### Network of top 3% most common metabolite pairs 
+                            Each vertex is a feature. Each edge means there are interactions between these features.
+                            The importance is shown as the number on the edge.
+                            '''
+                        ),
 
-                cyto.Cytoscape(
-                    id='cytoscape-layout-1',
-                    elements=elements,
-                    style={'width': '100%', 'height': '350px'},
-                    layout={
-                        'name': 'circle'
-                    },
-                    stylesheet=[
-                        {
-                            'selector': 'node',
-                            'style': {
-                                'label': 'data(label)'
-                            }
-                        },
-                        {
-                            'selector': 'edge',
-                            'style': {
-                                'label': 'data(weight)'
-                            }
-                        },
-                        {
-                            'selector': '[weight > 0]',
-                            'style': {
-                                'line-color': 'black'
-                            }
-                        }
-                    ]
-                )
-            ],
-            className='pretty_container eleven columns'
+                        cyto.Cytoscape(
+                            id='cytoscape-layout-1',
+                            elements=elements,
+                            style={'width': '100%', 'height': '350px'},
+                            layout={
+                                'name': 'circle'
+                            },
+                            stylesheet=[
+                                {
+                                    'selector': 'node',
+                                    'style': {
+                                        'label': 'data(label)'
+                                    }
+                                },
+                                {
+                                    'selector': 'edge',
+                                    'style': {
+                                        'label': 'data(weight)'
+                                    }
+                                },
+                                {
+                                    'selector': '[weight > 0]',
+                                    'style': {
+                                        'line-color': 'black'
+                                    }
+                                }
+                            ]
+                        )
+                    ],
+                    className='pretty_container eleven columns',
+            ),
+        className = 'container-display',
     )
 
 

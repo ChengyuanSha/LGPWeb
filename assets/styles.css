@@ -56,6 +56,7 @@ body {
 
 .container-display {
   display: flex;
+  justify-content: center;
 }
 
 #individual_graph,
@@ -125,6 +126,4 @@ body {
   pointer-events: all;
   transform: translate(30px, 349px);
 }
-
-
 
