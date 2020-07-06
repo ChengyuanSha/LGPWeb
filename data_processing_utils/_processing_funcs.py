@@ -218,6 +218,8 @@ class ResultProcessing:
         top = int(len(co_occurence_rank) * 0.03) # get top 3%
         co_occurence_rank = sorted(co_occurence_rank, key=lambda x: x[2])[::-1]
         network_df = pd.DataFrame.from_records(co_occurence_rank[:top])
+        if network_df.empty:
+            return network_df
         network_df.columns = ['f1', 'f2', 'weight']
         return network_df
 

@@ -600,6 +600,7 @@ def display_program_length_filter_value_and_ori_count(value, raw_result ):
 def set_prog_len_radiobutton_and_update_filtered_data(result_data):
     result_data.calculate_featureList_and_calcvariableList()
     length_list = sorted(list(set([len(i) for i in result_data.feature_list])))
+    length_list = [i for i in length_list if i > 0]
     return [{'label': str(i) , 'value': i} for i in length_list]
 
 @cc.cached_callback([Output('filtered-result-store', 'data')],
@@ -622,6 +623,18 @@ def set_prog_len_value(available_options):
 def create_network(result_data, ori_data):
     names = ResultProcessing.read_dataset_names(ori_data)
     df = result_data.get_network_data(names)
+    # error catching, when no data available
+    if df.empty:
+        return html.Div(
+            html.Div(
+                dcc.Markdown(
+                    '''
+                    ##### No network graph in given selection, try to decrease testing accuracy filter.
+                    '''),
+                className='pretty_container eleven columns',
+            ),
+            className = 'container-display',
+        )
     nodes = [
         {
             'data': {'id': node, 'label': node},
