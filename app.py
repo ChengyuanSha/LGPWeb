@@ -26,7 +26,6 @@ cc = CallbackCache(cache=DiskCache(cache_dir="cache_dir"), expire_after=10)
 
 server = app.server
 
-# need to suppress bc using dynamic tabs
 app.config['suppress_callback_exceptions'] = True
 
 # -------------     layout code    ------------------
@@ -36,10 +35,6 @@ app.layout = html.Div(
         dcc.Loading(dcc.Store(id='filtered-result-store')),
         dcc.Loading(dcc.Store(id='raw-result-store')),
         dcc.Loading(dcc.Store(id='ori-data-store')),
-
-        # --- headline ---
-        # empty Div to trigger javascript file for graph resizing
-        #html.Div(id='signal', style={'display': 'none'}),
 
         # --- website title ---
         html.Div(
@@ -238,51 +233,69 @@ def render_main_visualization_layout(available_indicators):
         # ------------------   first 2 graphs in website  --------------
         html.Div([
             html.Div([
+                dcc.Markdown(
+                    '''
+                    ##### Model Analysis Based on Feature Number and Occurrence
+                    Click on **feature occurrence bar graph** below  
+                    It will show the testing set accuracy of all models containing that feature on the right side.  
+                    Click on points on **accuracy graph**, you will see the detailed information about the model.  
+                    '''
+                ),
+
+                html.Br(),
+
                 dcc.Graph(
                     id='filtered-occurrences-scatter',
                 )
-            ],
+                ],
                 id="left-column",
                 className="pretty_container six columns",
             ),
-
             html.Div([
-                dcc.Graph(
-                    id='filtered-accuracy-scatter',
+                html.Div([
+                    dcc.Graph(
+                        id='filtered-accuracy-scatter',
+                    )
+                ],
+                    id="info-container",
+                    className="pretty_container",
+                ),
+
+                html.Div([
+                    dcc.Markdown("""
+                        **Detailed Model Info:**  
+                    """),
+
+                    html.Pre(id='model-click-data',
+                             style={
+                                 'border': 'thin lightgrey solid',
+                                 'overflowX': 'scroll'
+                             }),
+                ],
+                    id="accGraphContainer",
+                    className="pretty_container",
                 )
-            ],
-                id="right-column",
-                className="pretty_container six columns",
+                ],
+                className="six columns",
             ),
-        ],
-            className="row flex-display",
-        ),
-        #     ------------------   model visualization  --------------
-        html.Div([
-            html.Div([
-                dcc.Markdown("""
-                    **Click Models On Model Accuracy Scatter Plot**  
 
-                    Detailed Model Info:
-                """),
-
-                html.Pre(id='model-click-data',
-                         style={
-                             'border': 'thin lightgrey solid',
-                             'overflowX': 'scroll'
-                         }),
             ],
-            className="pretty_container six columns",)
-        ],
-        className="row flex-display",
+            className="row flex-display",
         ),
 
         # row 2 selectors in website
         html.Div([
             html.Div([
                 dcc.Markdown('''
-                            **Click on co-occurrence heat map to see two feature distribution in original data.**    
-                            Or manually choose X axis / Y axis for two distribution graph on dropdown manual.
+                            ##### Two Feature Co-occurrence Analysis 
+                            
+                            > This analyze the occurrence of two features in a same model
+                            > Note you have to set number of features filter to 2+ 
+                            
+                            Left side is **co-occurrence heat map**. Right side is the **data distribution** of 
+                            original dataset.   
+                            Click on **co-occurrence heat map** to see two feature distribution in original data.   
+                            Also you can manually choose X axis / Y axis for two distribution graph on dropdown manual.
                         '''),
 
                 html.Div([
@@ -315,9 +328,6 @@ def render_main_visualization_layout(available_indicators):
         html.Div([
             # Two Feature Co-occurrence in website
             html.Div([
-                html.Div(
-                    html.H6('Two Feature Co-occurrence Analysis (Only For 2+ Features)')
-                ),
 
                 html.Div(
                     dcc.Graph(
@@ -326,6 +336,7 @@ def render_main_visualization_layout(available_indicators):
                 )
 
             ],
+                id='left-column',
                 className="pretty_container four columns"
             ),
 
@@ -336,7 +347,8 @@ def render_main_visualization_layout(available_indicators):
                     # hoverData={'points': [{'customdata': 'Japan'}]}
                 )
             ],
-                className="pretty_container seven columns",
+                id='right-column',
+                className="pretty_container eight columns",
             ),
         ],
         className="row flex-display"
@@ -344,9 +356,8 @@ def render_main_visualization_layout(available_indicators):
 
         # --- network analysis ----
         html.Div(id='network'),
-
-
     ])
+
 
 @cc.callback(
     Output('filtered-accuracy-scatter', 'figure'),
@@ -355,7 +366,6 @@ def render_main_visualization_layout(available_indicators):
      Input('filtered-result-store', 'data')])
 def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data):
     if clickData is not None:
-        # result_data = jsonpickle.decode(result_data)
         result_data.calculate_featureList_and_calcvariableList()
         feature_num = int(clickData['points'][0]['x'][1:]) # extract data from click
         m_index = result_data.get_index_of_models_given_feature_and_length(feature_num, prog_len)
@@ -410,7 +420,6 @@ def update_occurrence_graph(pro_len, result_data, ori_data):
            }, len(result_data.model_list), cur_feature_num
 
 
-
 @cc.callback(
     Output('co-occurrence-graph', 'figure'),
     [Input('prog-len-filter-slider', 'value'),
@@ -440,7 +449,6 @@ def update_co_occurrence_graph(pro_len, result_data, ori_data):
             }],
             'layout': {
                 'title': 'Co-occurrence of ' + str(pro_len) + ' Feature Models',
-                #'margin': dict(l=20, r=20, t=20, b=20)
             }
         }
     return {}
@@ -498,7 +506,6 @@ def update_feature_comparision_graph_using_filters(xaxis_column_index, yaxis_col
     [Input('filtered-accuracy-scatter', 'clickData'),
      Input('filtered-result-store', 'data')])
 def update_model_click_data(clickData, result_data):
-    #result_data = jsonpickle.decode(result_data)
     if clickData is not None:
         i = int(clickData['points'][0]['x'][1:])
         return result_data.convert_program_str_repr(result_data.model_list[i])
@@ -631,7 +638,7 @@ def create_network(result_data, ori_data):
                 html.Div([
                         dcc.Markdown(
                             '''
-                            #### Network of top 3% most common metabolite pairs 
+                            #### Network of Top 3% Most Common Metabolite Pairs 
                             Each vertex is a feature. Each edge means there are interactions between these features.
                             The importance is shown as the number on the edge.
                             '''
