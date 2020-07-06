@@ -2,10 +2,7 @@ import dash
 import numpy as np
 import pandas as pd
 import base64
-import datetime
-import pickle
 import os
-import copy
 import io
 import dash_core_components as dcc
 import dash_cytoscape as cyto
@@ -95,53 +92,80 @@ app.layout = html.Div(
         ),
         # --- File upload ---
         html.Div([
-
-            dcc.Upload(
-                id='upload-result-data',
-                children=html.Div([
-                    html.H6('Upload pickle result file here'),
-                    'Drag and Drop or ',
-                    html.A('Select Files')
-                ]),
-                className="pretty_container six columns",
-                # Allow multiple files to be uploaded
-                multiple=True
-            ),
-
-            dcc.Upload(
-                id='upload-ori',
-                children=html.Div([
-                    html.H6('Upload original dataset csv file here'),
-                    'Drag and Drop or ',
-                    html.A('Select Files')
-                ]),
-                className="pretty_container six columns",
-                # Allow multiple files to be uploaded
-                multiple=True
-            ),
-
-            html.A(
-                html.Button(
-                    'Download sample pickle result data',
-                    className='control-download'
+            # pickle file upload
+            html.Div([
+                dcc.Upload(
+                    id='upload-result-data',
+                    children=html.Div([
+                        html.H6('Upload pickle result file here'),
+                        'Drag and Drop or ',
+                        html.A('Select Files')
+                    ]),
+                    className="pretty_container six columns",
+                    # Allow multiple files to be uploaded
+                    multiple=True
                 ),
-                href=os.path.join('assets', 'sample_result_data', 'lgp_sample.pkl'),
-                download='lgp_sample.pkl'
+                dcc.Markdown(
+                '''
+                ##### Pickle file ends with .pkl. 
+                It is the result file after running lgp algorithm on clusters.
+                ''')
+                ],
+                className="row"
             ),
-
-            html.A(
-                html.Button(
-                    'Download sample csv ori data',
-                    className='control-download'
+            # original data file upload
+            html.Div([
+                dcc.Upload(
+                    id='upload-ori',
+                    children=html.Div([
+                        html.H6('Upload original dataset csv file here'),
+                        'Drag and Drop or ',
+                        html.A('Select Files')
+                    ]),
+                    className="pretty_container six columns",
+                    # Allow multiple files to be uploaded
+                    multiple=True
                 ),
-                href=os.path.join('assets', 'sample_ori_data', 'sample_alzheimer_vs_normal.csv'),
-                download='lgp_sample.pkl'
+                dcc.Markdown(
+                    '''
+                    ##### Sample data file has to follow specific format.
+                    First column should be named 'category' which contains label of the class.
+                    The rest columns contain sample data with feature names as the row header.
+                    ''')
+                ],
+                className="row"
+            ),
+            # sample file link
+            html.Div([
+                html.A(
+                    html.Button(
+                        'Download sample pickle result data',
+                        className='control-download'
+                    ),
+                    href=os.path.join('assets', 'sample_result_data', 'lgp_sample.pkl'),
+                    download='lgp_sample.pkl',
+                    className="four columns"
+                ),
+
+                html.A(
+                    html.Button(
+                        'Download sample csv ori data',
+                        className='control-download'
+                    ),
+                    href=os.path.join('assets', 'sample_ori_data', 'sample_alzheimer_vs_normal.csv'),
+                    download='lgp_sample.pkl',
+                    className="four columns"
+                ),
+
+                html.Button(
+                    "Refresh Result",
+                    id="main-render-button",
+                    className="three columns"
+                )
+                ],
+                className="row"
             ),
 
-            html.Button(
-                "Visualize Result",
-                id="main-render-button",
-            )
         ],
         ),
         # main page
@@ -603,35 +627,46 @@ def create_network(result_data, ori_data):
         for index, row in df.iterrows()
     ]
     elements = nodes + edges
-    return cyto.Cytoscape(
-            id='cytoscape-layout-1',
-            elements=elements,
-            style={'width': '100%', 'height': '350px'},
-            layout={
-                'name': 'circle'
-            },
-            stylesheet=[
-                {
-                    'selector': 'node',
-                    'style': {
-                        'label': 'data(label)'
-                    }
-                },
-                {
-                    'selector': 'edge',
-                    'style': {
-                        'label': 'data(weight)'
-                    }
-                },
-                {
-                    'selector': '[weight > 0]',
-                    'style': {
-                        'line-color': 'black'
-                    }
-                }
-            ]
-    )
+    return html.Div([
+                dcc.Markdown(
+                    '''
+                    #### Network of top 3% most common metabolite pairs 
+                    Each vertex is a feature. Each edge means there are interactions between these features.
+                    The importance is shown as the number on the edge.
+                    '''
+                ),
 
+                cyto.Cytoscape(
+                    id='cytoscape-layout-1',
+                    elements=elements,
+                    style={'width': '100%', 'height': '350px'},
+                    layout={
+                        'name': 'circle'
+                    },
+                    stylesheet=[
+                        {
+                            'selector': 'node',
+                            'style': {
+                                'label': 'data(label)'
+                            }
+                        },
+                        {
+                            'selector': 'edge',
+                            'style': {
+                                'label': 'data(weight)'
+                            }
+                        },
+                        {
+                            'selector': '[weight > 0]',
+                            'style': {
+                                'line-color': 'black'
+                            }
+                        }
+                    ]
+                )
+            ],
+            className='pretty_container eleven columns'
+    )
 
 
 cc.register(app)
