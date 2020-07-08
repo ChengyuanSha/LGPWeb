@@ -22,7 +22,7 @@ app = dash.Dash(
 app.title = 'LGP'
 
 # Create (server side) disk cache.
-cc = CallbackCache(cache=DiskCache(cache_dir="cache_dir"), expire_after=10)
+cc = CallbackCache(cache=DiskCache(cache_dir="cache_dir"))
 
 server = app.server
 
@@ -142,7 +142,7 @@ app.layout = html.Div(
                         'Download sample pickle result data',
                         className='control-download'
                     ),
-                    href=os.path.join('assets', 'sample_result_data', 'lgp_sample.pkl'),
+                    href=os.path.join('assets', 'sample_data', 'lgp_sample.pkl'),
                     download='lgp_sample.pkl',
                     className="four columns"
                 ),
@@ -152,8 +152,8 @@ app.layout = html.Div(
                         'Download sample csv ori data',
                         className='control-download'
                     ),
-                    href=os.path.join('assets', 'sample_ori_data', 'sample_alzheimer_vs_normal.csv'),
-                    download='lgp_sample.pkl',
+                    href=os.path.join('assets', 'sample_data', 'sample_alzheimer_vs_normal.csv'),
+                    download='sample_alzheimer_vs_normal.csv',
                     className="four columns"
                 ),
 
@@ -664,6 +664,7 @@ def create_network(result_data, ori_data):
                             layout={
                                 'name': 'circle'
                             },
+                            zoomingEnabled=False,
                             stylesheet=[
                                 {
                                     'selector': 'node',
