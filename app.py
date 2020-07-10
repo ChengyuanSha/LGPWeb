@@ -287,7 +287,7 @@ def render_main_visualization_layout(available_indicators):
         html.Div([
             html.Div([
                 dcc.Markdown('''
-                            ##### Two Feature Co-occurrence Analysis 
+                            ##### Feature Pairwise Analysis 
                             
                             > This analyze the occurrence of two features in a same model
                             > Note you have to set number of features filter to 2+ 
@@ -681,7 +681,7 @@ def create_network(result_data, ori_data):
                                 {
                                     'selector': '[weight > 0]',
                                     'style': {
-                                        'line-color': 'black'
+                                        'line-color': '#CCCCCC'
                                     }
                                 }
                             ]
