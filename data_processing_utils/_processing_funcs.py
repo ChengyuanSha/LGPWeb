@@ -24,12 +24,8 @@ class ResultProcessing:
         numpy array, processed with real feature index
     calculation_variable_list
     '''
-    def __init__(self, original_data_file_path):
-        self.original_data_file_path = original_data_file_path
-        self.X, self.y, self.names = self.readDataRuiJinAD()
-
-    def get_original_dataframe(self):
-        return pd.read_csv(self.original_data_file_path)
+    def __init__(self):
+        pass
 
     @staticmethod
     def read_dataset_names(df):
@@ -43,32 +39,6 @@ class ResultProcessing:
         X = scaler.fit_transform(X)
         y = df['category'].values
         return X, y
-
-    def readDataRuiJin(self):
-        df = self.get_original_dataframe()
-        names = df.columns[1:].values
-        # AMCI VS Normal
-        df = df[(df['category'] == 2) | (df['category'] == 3)]
-        y = df['category'].values.astype('int64')
-        y = np.where(y == 2, 0, y)
-        y = np.where(y == 3, 1, y)
-        X = df.iloc[:, 1:].values
-        scaler = MinMaxScaler((-1, 1))
-        X = scaler.fit_transform(X)
-        return X, y, names
-
-    def readDataRuiJinAD(self):
-        df = self.get_original_dataframe()
-        names = df.columns[1:].values
-        # AD VS Normal
-        df = df[(df['category'] == 1) | (df['category'] == 3)]
-        y = df['category'].values.astype('int64')
-        y = np.where(y == 1, 0, y)
-        y = np.where(y == 3, 1, y)
-        X = df.iloc[:, 1:].values
-        scaler = MinMaxScaler((-1, 1))
-        X = scaler.fit_transform(X)
-        return X, y, names
 
     # load models
     def load_models_from_file_path(self, pickle_file_path):
@@ -225,14 +195,14 @@ class ResultProcessing:
 
 if __name__ == '__main__':
     # some small testing code
-    result = ResultProcessing("../dataset/RuiJin_Processed.csv")
-    result.load_models_from_file_path("../dataset/lgp_acc.pkl")
-    X, y, names = result.readDataRuiJinAD()
-    result.calculate_featureList_and_calcvariableList()
-
-    df = result.get_network_data(names)
-    print(df['source'].unique())
-    print(np.unique(df[['f1', 'f2']].values))
+    result = ResultProcessing()
+    # result.load_models_from_file_path("../dataset/lgp_acc.pkl")
+    # X, y, names = result.readDataRuiJinAD()
+    # result.calculate_featureList_and_calcvariableList()
+    #
+    # df = result.get_network_data(names)
+    # print(df['source'].unique())
+    # print(np.unique(df[['f1', 'f2']].values))
     # for index, row in df.iterrows():
     #     print(df['source'][index])
 
@@ -254,13 +224,4 @@ if __name__ == '__main__':
     #         hover_text[-1].append('X: {}<br />Y: {}<br />Count: {}'.format(xx, yy, co_matrix[xi,yi]))
     # print(hover_text)
 
-    # result_data = jsonpickle.encode(result)
-    # start = time.time()
-    # result_data = jsonpickle.decode(result_data)
-    # end = time.time()
-    # # start = time.time()
-    # # result_data = result.toJSON()
-    # # result_data = jsonpickle.decode(result_data)
-    # # end = time.time()
-    # print(end - start)
 

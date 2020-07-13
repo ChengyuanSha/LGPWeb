@@ -540,7 +540,7 @@ def parse_contents_result(contents, filename):
     try:
         if 'pkl' in filename:
             # initialize staff
-            result = ResultProcessing("dataset/RuiJin_Processed.csv")
+            result = ResultProcessing()
             result.load_models_directly(io.BytesIO(decoded))
             return result
     except Exception as e:
