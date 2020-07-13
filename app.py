@@ -355,6 +355,28 @@ def render_main_visualization_layout(available_indicators):
         ),
 
         # --- network analysis ----
+        # network filter
+        html.Div(
+            html.Div([
+                html.H6('Choose top percentage of the data to construct network graph. '),
+
+                dcc.Slider(
+                    id='network-filter',
+                    min=1,
+                    max=10,
+                    value=3,
+                    marks={str(num): str(num) + '%' for num in range(1, 11, 1)},
+                    step=1,
+                    updatemode='drag'
+                ),
+
+            ],
+                className="pretty_container seven columns",
+            ),
+          className='container-display'
+        ),
+
+        # feature network
         html.Div(id='network'),
     ])
 
@@ -619,10 +641,12 @@ def set_prog_len_value(available_options):
 
 @cc.callback(Output('network', 'children'),
              [Input('filtered-result-store', 'data'),
-              Input('ori-data-store', 'data')])
-def create_network(result_data, ori_data):
+              Input('ori-data-store', 'data'),
+              Input('network-filter', 'value')])
+def create_network(result_data, ori_data, top_percentage):
+    top_percentage = top_percentage * 0.01
     names = ResultProcessing.read_dataset_names(ori_data)
-    df = result_data.get_network_data(names)
+    df = result_data.get_network_data(names, top_percentage)
     # error catching, when no data available
     if df.empty:
         return html.Div(

@@ -198,7 +198,7 @@ class ResultProcessing:
         # print(s)
         return s
 
-    def get_network_data(self, names):
+    def get_network_data(self, names, top_percentage):
         # feature index
         index = np.asarray([c for c, i in enumerate(self.feature_list)])
         # filter feature list
@@ -215,7 +215,7 @@ class ResultProcessing:
             if not ((col, row) in appeared):
                 co_occurence_rank.append([names[row], names[col],
                                           np.round(cooc_matrix[row, col], 2)])
-        top = int(len(co_occurence_rank) * 0.03) # get top 3%
+        top = int(len(co_occurence_rank) * top_percentage) # get top %
         co_occurence_rank = sorted(co_occurence_rank, key=lambda x: x[2])[::-1]
         network_df = pd.DataFrame.from_records(co_occurence_rank[:top])
         if network_df.empty:
