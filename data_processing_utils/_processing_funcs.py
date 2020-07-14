@@ -129,7 +129,7 @@ class ResultProcessing:
     def get_index_of_models_given_feature_and_length(self, feature_num, given_length):
         return [c for c, i in enumerate(self.feature_list) if len(i) == given_length and feature_num in i]
 
-    def convert_program_str_repr(self, model):
+    def convert_program_str_repr(self, model, names):
         # convert the raw string to user friendly string
         s = ''
         original_str = model.bestEffProgStr_.splitlines()
@@ -151,7 +151,7 @@ class ResultProcessing:
                                             current_string)
                 elif int(var) >= model.numberOfVariable and int(var) != 0: # features
                     name_index = int(var) - model.numberOfVariable
-                    current_string = re.sub('r' + re.escape(var), str(self.names[name_index]), current_string)
+                    current_string = re.sub('r' + re.escape(var), str(names[name_index]), current_string)
             # take care of indentation
             if indentation:
                 current_string = current_string[:3] + indentation_level*'  ' + 'then ' + current_string[3:]
