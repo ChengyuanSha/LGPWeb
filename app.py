@@ -290,7 +290,7 @@ def render_main_visualization_layout(available_indicators):
                 ),
             ]),
 
-            dcc.Tab(label='Pairwise Analysis', children=[
+            dcc.Tab(label='Pairwise Co-occurrence Analysis', children=[
                 # ---------------  Pairwise analysis -----------------
                 html.Div([
                     html.Div([
@@ -363,7 +363,7 @@ def render_main_visualization_layout(available_indicators):
                 ),
             ]),
 
-            dcc.Tab(label='Network Analysis', children=[
+            dcc.Tab(label='Co-occurrence Network Analysis', children=[
                 # ---------- network analysis ------------
                 # network filter
                 html.Div(
@@ -493,7 +493,7 @@ def update_co_occurrence_graph(pro_len, result_data, ori_df):
                 'text': hover_text
             }],
             'layout': {
-                'title': 'Co-occurrence of ' + str(pro_len) + ' Feature Models',
+                'title': 'Co-occurrence of ' + str(pro_len) + ' Features',
             }
         }
     return {}
@@ -542,7 +542,7 @@ def update_feature_comparision_graph_using_filters(xaxis_column_index, yaxis_col
             },
             hovermode='closest',
             clickmode='event+select',
-            title='Two Feature Comparision'
+            title='Two Feature Scatter Plot'
         )
     }
 
