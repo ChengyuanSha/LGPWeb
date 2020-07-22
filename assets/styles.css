@@ -127,3 +127,7 @@ body {
   transform: translate(30px, 349px);
 }
 
+.vertical_tab_display {
+    'width': '70%',
+    'float': 'right'
+}

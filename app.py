@@ -200,168 +200,185 @@ def render_main_visualization_layout(available_indicators):
                 className="pretty_container six columns",
             ),
 
-            html.Div([
-                html.H6('Choose number of features in a Program'),
-
-                dcc.RadioItems(id='prog-len-filter-slider', labelStyle={'display': 'inline-block'}),
-
-                html.Div(id='updatemode-output-proglenfilter', style={'margin-top': 20})
-            ],
-                className="pretty_container six columns",
+            html.Div(
+                [html.H6(id="ori_model_count"), html.P("Original Models Count")],
+                className="pretty_container three columns",
+            ),
+            html.Div(
+                [html.H6(id="filtered_by_accuracy_text"),
+                 html.P("Model Count After Filtered by Testing Set Accuracy")],
+                className="pretty_container three columns",
             ),
 
         ],
             className="row container-display",
         ),
-        # --- three info box ---
-        html.Div(
-            [
-                html.Div(
-                    [html.H6(id="ori_model_count"), html.P("Original Models Count")],
-                    className="pretty_container three columns",
-                ),
-                html.Div(
-                    [html.H6(id="filtered_by_accuracy_text"),
-                     html.P("Model Count After Filtered by Testing Set Accuracy")],
-                    className="pretty_container four columns",
-                ),
-                html.Div(
-                    [html.H6(id="filtered_by_len_text"),
-                     html.P("Model Count After Filtered by Accuracy & Number of Feature")],
-                    className="pretty_container four columns",
-                ),
-            ],
-            className="row container-display",
-        ),
+
         # ------------------   Feature Occurrence  --------------
 
         dcc.Tabs([
-            dcc.Tab(label='Feature Occurrence Analysis', children=[
+
+            dcc.Tab(label='Feature Occurrence & Pairwise Co-occurrence Analysis', children=[
+
                 html.Div([
                     html.Div([
-                        dcc.Markdown(
-                            '''
-                            ##### Model Analysis Based on Feature Number and Occurrence
-                            * Click on **feature occurrence bar graph** below  
-                            * It will show the testing set accuracy of all models containing that feature on the right side.  
-                            * Click on points on **accuracy graph**, you will see the detailed information about the model.  
-                            '''
-                        ),
+                        html.H6('Choose number of features in a Program'),
 
-                        html.Br(),
+                        dcc.RadioItems(id='prog-len-filter-slider', labelStyle={'display': 'inline-block'}),
 
-                        dcc.Graph(
-                            id='filtered-occurrences-scatter',
-                        )
+                        html.Div(id='updatemode-output-proglenfilter', style={'margin-top': 20})
                     ],
-                        id="left-column",
                         className="pretty_container six columns",
                     ),
-                    html.Div([
+
+                    html.Div(
+                        [html.H6(id="filtered_by_len_text"),
+                         html.P("Model Count After Filtered by Accuracy & Number of Feature")],
+                        className="pretty_container four columns",
+                    )
+                    ],
+                    className="row container-display"
+                ),
+
+                dcc.Tabs([
+                    dcc.Tab(label='Feature Occurrence Analysis', children=[
                         html.Div([
-                            dcc.Graph(
-                                id='filtered-accuracy-scatter',
-                            )
-                        ],
-                            id="info-container",
-                            className="pretty_container",
+                            html.Div([
+                                dcc.Markdown(
+                                    '''
+                                    ##### Model Analysis Based on Feature Number and Occurrence
+                                    * Click on **feature occurrence bar graph** below  
+                                    * It will show the testing set accuracy of all models containing that feature on the right side.  
+                                    * Click on points on **accuracy graph**, you will see the detailed information about the model.  
+                                    '''
+                                ),
+
+                                html.Br(),
+
+                                dcc.Graph(
+                                    id='filtered-occurrences-scatter',
+                                )
+                                ],
+                                id="left-column",
+                                className="pretty_container six columns",
+                            ),
+                            html.Div([
+                                html.Div([
+                                    dcc.Graph(
+                                        id='filtered-accuracy-scatter',
+                                    )
+                                ],
+                                    id="info-container",
+                                    className="pretty_container",
+                                ),
+
+                                html.Div([
+                                    dcc.Markdown("""
+                                        **Detailed Model Info:**  
+                                    """),
+
+                                    html.Pre(id='model-click-data',
+                                             style={
+                                                 'border': 'thin lightgrey solid',
+                                                 'overflowX': 'scroll'
+                                             }),
+                                ],
+                                    id="accGraphContainer",
+                                    className="pretty_container",
+                                )
+                                ],
+                                className="six columns",
+                            ),
+
+                            ],
+                            className="row flex-display",
+                        ),
+                    ]),
+
+                    dcc.Tab(label='Pairwise Co-occurrence Analysis', children=[
+                        # ---------------  Pairwise analysis -----------------
+                        html.Div([
+                            html.Div([
+                                dcc.Markdown('''
+                                    ##### Feature Pairwise Analysis 
+                                    * This analyze the occurrence of two features in a same model
+                                    Note you have to set number of **features filter to 2+** 
+                                    * Left side is **co-occurrence heat map**. Right side is the **data distribution** of 
+                                    original dataset.   
+                                    * Click on **co-occurrence heat map** to see two feature distribution in original data.   
+                                    * Also you can manually choose X axis / Y axis for two distribution graph on dropdown manual.
+                                '''),
+
+                                html.Div([
+                                    dcc.Dropdown(
+                                        id='crossfilter-xaxis-column',
+                                        options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in
+                                                 available_indicators],
+                                        value='0'
+                                    ),
+                                ], style={'width': '49%', 'display': 'inline-block'},
+
+                                ),
+
+                                html.Div([
+                                    dcc.Dropdown(
+                                        id='crossfilter-yaxis-column',
+                                        options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in
+                                                 available_indicators],
+                                        value='1'
+                                    ),
+                                ], style={'width': '49%', 'float': 'right', 'display': 'inline-block'},
+                                )
+                                ],
+                                className="pretty_container twelve columns"
+                            ),
+                            ],
+                            className="row flex-display",
+                            #style={'align-items': 'center', 'justify-content': 'center'},
                         ),
 
+                        # Two Feature Comparision in the website
                         html.Div([
-                            dcc.Markdown("""
-            **Detailed Model Info:**  
-        """),
+                            # Two Feature Co-occurrence in website
+                            html.Div([
 
-                            html.Pre(id='model-click-data',
-                                     style={
-                                         'border': 'thin lightgrey solid',
-                                         'overflowX': 'scroll'
-                                     }),
+                                html.Div(
+                                    dcc.Graph(
+                                        id='co-occurrence-graph'
+                                    )
+                                )
+
+                            ],
+                                id='left-column',
+                                className="pretty_container four columns"
+                            ),
+
+                            # 2 feature scatter plot, update based on x, y filter, see the callback
+                            html.Div([
+                                dcc.Graph(
+                                    id='crossfilter-indicator-scatter',
+                                    # hoverData={'points': [{'customdata': 'Japan'}]}
+                                )
+                            ],
+                                id='right-column',
+                                className="pretty_container eight columns",
+                            ),
                         ],
-                            id="accGraphContainer",
-                            className="pretty_container",
-                        )
-                    ],
-                        className="six columns",
-                    ),
-
-                ],
-                    className="row flex-display",
-                ),
-            ]),
-
-            dcc.Tab(label='Pairwise Co-occurrence Analysis', children=[
-                # ---------------  Pairwise analysis -----------------
-                html.Div([
-                    html.Div([
-                        dcc.Markdown('''
-                        ##### Feature Pairwise Analysis 
-                        * This analyze the occurrence of two features in a same model
-                        Note you have to set number of **features filter to 2+** 
-                        * Left side is **co-occurrence heat map**. Right side is the **data distribution** of 
-                        original dataset.   
-                        * Click on **co-occurrence heat map** to see two feature distribution in original data.   
-                        * Also you can manually choose X axis / Y axis for two distribution graph on dropdown manual.
-                    '''),
-
-                        html.Div([
-                            dcc.Dropdown(
-                                id='crossfilter-xaxis-column',
-                                options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in
-                                         available_indicators],
-                                value='0'
-                            ),
-                        ], style={'width': '49%', 'display': 'inline-block'},
-
+                            className="row flex-display"
                         ),
-
-                        html.Div([
-                            dcc.Dropdown(
-                                id='crossfilter-yaxis-column',
-                                options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in
-                                         available_indicators],
-                                value='1'
-                            ),
-                        ], style={'width': '49%', 'float': 'right', 'display': 'inline-block'},
-                        )
-                    ],
-                        className="pretty_container twelve columns"
-                    ),
+                    ]),
                 ],
-                    className="row flex-display",
-                    style={'align-items': 'center', 'justify-content': 'center'},
-                ),
+                vertical=True,
+                parent_style={'flex-direction': 'column',
+                              '-webkit-flex-direction': 'column',
+                              '-ms-flex-direction': 'column',
+                              'display': 'flex'},
+                style={'width': '25%',
+                       'float': 'left'},
+                ), # end sub tabs
+            ]
+            ), # end tab 1
 
-                # Two Feature Comparision in the website
-                html.Div([
-                    # Two Feature Co-occurrence in website
-                    html.Div([
-
-                        html.Div(
-                            dcc.Graph(
-                                id='co-occurrence-graph'
-                            )
-                        )
-
-                    ],
-                        id='left-column',
-                        className="pretty_container four columns"
-                    ),
-
-                    # 2 feature scatter plot, update based on x, y filter, see the callback
-                    html.Div([
-                        dcc.Graph(
-                            id='crossfilter-indicator-scatter',
-                            # hoverData={'points': [{'customdata': 'Japan'}]}
-                        )
-                    ],
-                        id='right-column',
-                        className="pretty_container eight columns",
-                    ),
-                ],
-                    className="row flex-display"
-                ),
-            ]),
 
             dcc.Tab(label='Co-occurrence Network Analysis', children=[
                 # ---------- network analysis ------------
@@ -397,7 +414,7 @@ def render_main_visualization_layout(available_indicators):
 
                 # feature network
                 html.Div(id='network'),
-            ]),
+            ]), # end tab 2
         ]), # end tabs
     ])
 
