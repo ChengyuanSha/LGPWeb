@@ -32,9 +32,9 @@ app.config['suppress_callback_exceptions'] = True
 app.layout = html.Div(
     [
         # The memory store reverts to the default on every page refresh
-        dcc.Loading(dcc.Store(id='filtered-result-store')),
-        dcc.Loading(dcc.Store(id='raw-result-store')),
-        dcc.Loading(dcc.Store(id='ori-df-store')),
+        dcc.Loading(dcc.Store(id='filtered-result-store'), fullscreen=True),
+        dcc.Loading(dcc.Store(id='raw-result-store'), fullscreen=True),
+        dcc.Loading(dcc.Store(id='ori-df-store'), fullscreen=True),
 
         # --- website title ---
         html.Div(
