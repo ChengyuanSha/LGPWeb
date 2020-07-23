@@ -328,7 +328,7 @@ def render_main_visualization_layout(available_indicators):
                             html.Div([
                                 dcc.Markdown(
                                     '''
-                                    * You can manually choose X axis / Y axis for two distribution graph on dropdown manual.
+                                    * You can manually choose X axis / Y axis for **two feature scatter** on dropdown manual.
                                     '''
                                 ),
                                 # two manual filters
