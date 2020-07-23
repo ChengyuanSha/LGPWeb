@@ -8,6 +8,8 @@ import re
 import copy
 import itertools
 from scipy.sparse import csr_matrix
+from functools import reduce
+from operator import add
 
 class ResultProcessing:
     '''
@@ -84,14 +86,18 @@ class ResultProcessing:
                     feature_list[i][j] = int(feature_list[i][j][1:]) - numOfVariable
                     j += 1  # ONLY INCREMENT HERE
             i += 1
-        self.feature_list = np.asarray(feature_list)
+        self.feature_list = np.array(feature_list)
         self.calculation_variable_list = calculation_variable_list
 
     def get_occurrence_from_feature_list_given_length(self, given_length):
-        element = np.asarray([i for i in self.feature_list if len(i) == given_length])
+        if given_length == 'All':
+            element = self.feature_list.tolist()
+            rank = Counter(reduce(add, element)) # flatten list and count
+        else:
+            element = np.asarray([i for i in self.feature_list if len(i) == given_length])
+            rank = Counter(element.flatten())
         if len(element) == 0:
             raise ValueError("There is no program in this length")
-        rank = Counter(element.flatten())
         features, num_of_occurrences = zip(*rank.most_common())
         return features, num_of_occurrences, len(element)
 
@@ -100,9 +106,9 @@ class ResultProcessing:
         acc_scores = [ self.model_list[i].bestProFitness_ for i in prog_index ] # calculated in filter_model.py
         return prog_index, acc_scores
 
-    # private method
     @staticmethod
     def __create_co_occurences_matrix(allowed_words, documents):
+        # private method
         word_to_id = dict(zip(allowed_words, range(len(allowed_words))))
         documents_as_ids = [np.sort([word_to_id[w] for w in doc if w in word_to_id]).astype('uint32') for doc in
                             documents]
@@ -117,7 +123,10 @@ class ResultProcessing:
 
     def get_feature_co_occurences_matrix(self, given_length):
         # feature index
-        index = np.asarray([c for c, i in enumerate(self.feature_list) if len(i) == given_length])
+        if given_length == 'All':
+            index = np.asarray([c for c, i in enumerate(self.feature_list) if len(i) != 1])
+        else:
+            index = np.asarray([c for c, i in enumerate(self.feature_list) if len(i) == given_length])
         # filter feature list
         document = self.feature_list[index]
         f, _, _ = self.get_occurrence_from_feature_list_given_length(given_length)
@@ -127,7 +136,10 @@ class ResultProcessing:
         return cooc_matrix, feature_index
 
     def get_index_of_models_given_feature_and_length(self, feature_num, given_length):
-        return [c for c, i in enumerate(self.feature_list) if len(i) == given_length and feature_num in i]
+        if given_length == 'All': # all length
+            return [c for c, i in enumerate(self.feature_list) if feature_num in i]
+        else:
+            return [c for c, i in enumerate(self.feature_list) if len(i) == given_length and feature_num in i]
 
     def convert_program_str_repr(self, model, names):
         # convert the raw string to user friendly string

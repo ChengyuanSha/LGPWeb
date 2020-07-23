@@ -189,7 +189,7 @@ def render_main_visualization_layout(available_indicators):
                     id='testing-acc-filter-slider',
                     min=70,
                     max=100,
-                    value=70,
+                    value=85,
                     marks={str(num): str(num) + '%' for num in range(70, 101, 5)},
                     step=5,
                     updatemode='drag'
@@ -218,15 +218,14 @@ def render_main_visualization_layout(available_indicators):
 
         dcc.Tabs([
 
-            dcc.Tab(label='Feature Occurrence & Pairwise Co-occurrence Analysis', children=[
+            dcc.Tab(label='Feature Importance Analysis', children=[
 
                 html.Div([
                     html.Div([
-                        html.H6('Choose number of features in a Program'),
+                        html.H6('Look at model with _ effective features'),
 
                         dcc.RadioItems(id='prog-len-filter-slider', labelStyle={'display': 'inline-block'}),
 
-                        html.Div(id='updatemode-output-proglenfilter', style={'margin-top': 20})
                     ],
                         className="pretty_container six columns",
                     ),
@@ -246,10 +245,9 @@ def render_main_visualization_layout(available_indicators):
                             html.Div([
                                 dcc.Markdown(
                                     '''
-                                    ##### Model Analysis Based on Feature Number and Occurrence
-                                    * Click on **feature occurrence bar graph** below  
-                                    * It will show the testing set accuracy of all models containing that feature on the right side.  
-                                    * Click on points on **accuracy graph**, you will see the detailed information about the model.  
+                                    * Click features on **feature occurrence graph**. It will show the testing set accuracy of all models 
+                                    containing that feature on the **Model Accuracies graph**.  
+                                    * Click on points on **Model Accuracies graph**, you will see the detailed information about the model.  
                                     '''
                                 ),
 
@@ -300,37 +298,10 @@ def render_main_visualization_layout(available_indicators):
                         html.Div([
                             html.Div([
                                 dcc.Markdown('''
-                                    ##### Feature Pairwise Analysis 
-                                    * This analyze the occurrence of two features in a same model
-                                    Note you have to set number of **features filter to 2+** 
-                                    * Left side is **co-occurrence heat map**. Right side is the **data distribution** of 
-                                    original dataset.   
+                                    * Need to look at models with at least **two effective features**
                                     * Click on **co-occurrence heat map** to see two feature distribution in original data.   
-                                    * Also you can manually choose X axis / Y axis for two distribution graph on dropdown manual.
                                 '''),
-
-                                html.Div([
-                                    dcc.Dropdown(
-                                        id='crossfilter-xaxis-column',
-                                        options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in
-                                                 available_indicators],
-                                        value='0'
-                                    ),
-                                ], style={'width': '49%', 'display': 'inline-block'},
-
-                                ),
-
-                                html.Div([
-                                    dcc.Dropdown(
-                                        id='crossfilter-yaxis-column',
-                                        options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in
-                                                 available_indicators],
-                                        value='1'
-                                    ),
-                                ], style={'width': '49%', 'float': 'right', 'display': 'inline-block'},
-                                )
-                                ],
-                                className="pretty_container twelve columns"
+                                ], className="pretty_container twelve columns"
                             ),
                             ],
                             className="row flex-display",
@@ -339,7 +310,7 @@ def render_main_visualization_layout(available_indicators):
 
                         # Two Feature Comparision in the website
                         html.Div([
-                            # Two Feature Co-occurrence in website
+                            # Two Feature co-occurrence in website
                             html.Div([
 
                                 html.Div(
@@ -351,16 +322,40 @@ def render_main_visualization_layout(available_indicators):
                             ],
                                 id='left-column',
                                 className="pretty_container four columns"
-                            ),
+                            ), # end co-occurrence
 
-                            # 2 feature scatter plot, update based on x, y filter, see the callback
+                            # Two feature scatter plot, update based on x, y filter, see the callback
                             html.Div([
+                                dcc.Markdown(
+                                    '''
+                                    * You can manually choose X axis / Y axis for two distribution graph on dropdown manual.
+                                    '''
+                                ),
+                                # two manual filters
+                                html.Div([
+                                    dcc.Dropdown(
+                                        id='crossfilter-xaxis-column',
+                                        options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in
+                                                 available_indicators],
+                                        value='0'
+                                    ),
+                                ],
+                                ),
+
+                                html.Div([
+                                    dcc.Dropdown(
+                                        id='crossfilter-yaxis-column',
+                                        options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in
+                                                 available_indicators],
+                                        value='1'
+                                    ),
+                                ],
+                                ),
+
                                 dcc.Graph(
                                     id='crossfilter-indicator-scatter',
-                                    # hoverData={'points': [{'customdata': 'Japan'}]}
                                 )
-                            ],
-                                id='right-column',
+                                ], id='right-column',
                                 className="pretty_container eight columns",
                             ),
                         ],
@@ -387,12 +382,7 @@ def render_main_visualization_layout(available_indicators):
                     html.Div([
                         dcc.Markdown(
                             '''
-                            ##### Network of Top % Most Common Metabolite Pairs  
-                            * This graph uses data after filtered by testing accuracy.
-                            * Choose **top percentage** of the data to construct network graph.
-                            * Each vertex is a feature. An edge links two features
-                             if their co-occurrence frequency in the best models is among the top % of all the pairs 
-                            * The importance is shown as the number on the edge
+                            ##### Network of Top _% Most Common Metabolite Pairs  
                             '''
                         ),
 
@@ -405,6 +395,13 @@ def render_main_visualization_layout(available_indicators):
                             step=1,
                             updatemode='drag'
                         ),
+
+                        dcc.Markdown(
+                            '''
+                            * Top % most common metabolite pairs are represented as edges and their two end point 
+                            * The pairwise co-occurrences are shown as edge weight
+                            '''
+                        )
 
                     ],
                         className="pretty_container eleven columns",
@@ -423,11 +420,13 @@ def render_main_visualization_layout(available_indicators):
     Output('filtered-accuracy-scatter', 'figure'),
     [Input('filtered-occurrences-scatter', 'clickData'),
      Input('prog-len-filter-slider', 'value'),
-     Input('filtered-result-store', 'data')])
-def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data):
+     Input('filtered-result-store', 'data'),
+     Input('ori-df-store', 'data')])
+def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data, ori_df):
+    names = ResultProcessing.read_dataset_names(ori_df)
     if clickData is not None:
         result_data.calculate_featureList_and_calcvariableList()
-        feature_num = int(clickData['points'][0]['x'][1:])  # extract data from click
+        feature_num = int(clickData['points'][0]['x'][1:])  # extract feature index data from click
         m_index = result_data.get_index_of_models_given_feature_and_length(feature_num, prog_len)
         testing_acc = [result_data.model_list[i].testingAccuracy for i in m_index]
         m_index = ['m' + str(i) for i in m_index]
@@ -440,16 +439,14 @@ def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data):
                  },
             ],
             'layout': {
-                'title': 'Model accuracy containing feature ' + str(feature_num) + ' with ' + str(
-                    prog_len) + ' features',
-                'xaxis': {'title': 'Program feature index'},
-                'yaxis': {'title': 'Num of occurrences'},
+                'title': '<b>Model Accuracies</b>'+ '<br>' + 'All Models Containing Feature ' + str(names[feature_num]) ,
+                'xaxis': {'title': 'model index'},
+                'yaxis': {'title': 'accuracy'},
                 'clickmode': 'event+select'
             }
         }
-    return {'layout': {
-        'title': 'No graph in given selection. Click on Occurrence graph.'
-    }}
+    return {'layout':
+            {'title': '<b>Model Accuracies</b>'}}
 
 
 @cc.callback(
@@ -460,7 +457,7 @@ def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data):
      Input('filtered-result-store', 'data'),
      Input('ori-df-store', 'data')])
 def update_occurrence_graph(pro_len, result_data, ori_df):
-    names = result_data.read_dataset_names(ori_df)
+    names = ResultProcessing.read_dataset_names(ori_df)
     result_data.calculate_featureList_and_calcvariableList()
     features, num_of_occurrences, cur_feature_num = result_data.get_occurrence_from_feature_list_given_length(pro_len)
     hover_text = [names[i] for i in features]
@@ -474,9 +471,9 @@ def update_occurrence_graph(pro_len, result_data, ori_df):
                    'text': hover_text
                }],
                'layout': {
-                   'title': 'Occurrences of Features of ' + str(pro_len) + ' Feature Models',
-                   'xaxis': {'title': 'Program feature index'},
-                   'yaxis': {'title': 'Num of occurrences'},
+                   'title': 'Feature Occurrences',
+                   'xaxis': {'title': 'feature index'},
+                   'yaxis': {'title': 'occurrences'},
                },
            }, len(result_data.model_list), cur_feature_num
 
@@ -487,10 +484,10 @@ def update_occurrence_graph(pro_len, result_data, ori_df):
      Input('filtered-result-store', 'data'),
      Input('ori-df-store', 'data')])
 def update_co_occurrence_graph(pro_len, result_data, ori_df):
-    names = result_data.read_dataset_names(ori_df)
+    names = ResultProcessing.read_dataset_names(ori_df)
     # result_data = jsonpickle.decode(result_data)
     result_data.calculate_featureList_and_calcvariableList()
-    if pro_len > 1:
+    if pro_len == 'All' or pro_len > 1:
         cooc_matrix, feature_index = result_data.get_feature_co_occurences_matrix(pro_len)
         hover_text = []
         for yi, yy in enumerate(feature_index):
@@ -510,10 +507,14 @@ def update_co_occurrence_graph(pro_len, result_data, ori_df):
                 'text': hover_text
             }],
             'layout': {
-                'title': 'Co-occurrence of ' + str(pro_len) + ' Features',
+                'title': 'Feature Pairwise Co-occurrence ',
             }
         }
-    return {}
+    return {
+            'layout': {
+                'title': 'Feature Pairwise Co-occurrence ',
+            }
+        }
 
 
 @cc.callback(
@@ -559,7 +560,7 @@ def update_feature_comparision_graph_using_filters(xaxis_column_index, yaxis_col
             },
             hovermode='closest',
             clickmode='event+select',
-            title='Two Feature Scatter Plot'
+            title='Two-Feature Scatter Plot'
         )
     }
 
@@ -654,14 +655,11 @@ def update_tesing_filter_value(value):
     return acc_text
 
 
-@cc.callback([Output('updatemode-output-proglenfilter', 'children'),
-              Output('ori_model_count', 'children')],
+@cc.callback([Output('ori_model_count', 'children')],
              [Input('prog-len-filter-slider', 'value'),
               Input('raw-result-store', 'data')])
-def display_program_length_filter_value_and_ori_count(value, raw_result):
-    # program length filter --> effective features text display
-    text = "Models with " + str(value) + " effective features are used"
-    return text, str(len(raw_result.model_list))
+def display_ori_count(trigger, raw_result):
+    return str(len(raw_result.model_list))
 
 
 @cc.callback([Output('prog-len-filter-slider', 'options')],
@@ -670,7 +668,7 @@ def set_prog_len_radiobutton_and_update_filtered_data(result_data):
     result_data.calculate_featureList_and_calcvariableList()
     length_list = sorted(list(set([len(i) for i in result_data.feature_list])))
     length_list = [i for i in length_list if i > 0]
-    return [{'label': str(i), 'value': i} for i in length_list]
+    return [{'label': str(i), 'value': i} for i in length_list] + [{'label': 'All', 'value': 'All'}]
 
 
 @cc.cached_callback([Output('filtered-result-store', 'data')],
@@ -751,7 +749,7 @@ def create_network(result_data, ori_df, top_percentage):
                         }
                     }
                 ]
-            )
+            ) # end cytoscape
         ],
             className='pretty_container eleven columns',
         ),
