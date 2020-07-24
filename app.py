@@ -42,8 +42,17 @@ app.layout = html.Div(
                 html.Div(
                     [
                         html.Img(
-                            src=app.get_asset_url("mib_logo.jpeg"),
+                            src=app.get_asset_url("mib_logo_trans.png"),
                             id="plotly-image",
+                            style={
+                                "height": "60px",
+                                "width": "auto",
+                                "margin-bottom": "25px",
+                            },
+                        ),
+                        html.Img(
+                            src=app.get_asset_url("queenscomputing.png"),
+                            id="plotly-image2",
                             style={
                                 "height": "60px",
                                 "width": "auto",
@@ -58,7 +67,7 @@ app.layout = html.Div(
                         html.Div(
                             [
                                 html.H3(
-                                    "SMILE: System Metabolomics using Interpretable Learning and Evolution",
+                                    "SMILE: Systems Metabolomics using Interpretable Learning and Evolution",
                                     style={"margin-bottom": "0px"},
                                 ),
                                 html.H5(
@@ -237,8 +246,8 @@ def render_main_visualization_layout(available_indicators):
                             html.Div([
                                 dcc.Markdown(
                                     '''
-                                    * Click a feature on **Feature Occurrence graph**. models containing that feature 
-                                    will be shown in the **Model Accuracies graph**.  
+                                    * Click a feature on **Feature Occurrence graph**, models containing that feature 
+                                    will be shown in the **Model Accuracy graph**.  
                                     * Click on a point on **Model Accuracy graph**, the predictive model will be 
                                     shown in "Detailed Model Info".
                                     '''
@@ -395,7 +404,7 @@ def render_main_visualization_layout(available_indicators):
                         dcc.Markdown(
                             '''
                             * Top % most common metabolite pairs are represented as edges and their two end points 
-                            * The pairwise co-occurrences are shown as edge weight
+                            * The pairwise co-occurrences are shown as edge weights
                             '''
                         )
 
@@ -469,7 +478,7 @@ def update_occurrence_graph(pro_len, result_data, ori_df):
                    'text': hover_text
                }],
                'layout': {
-                   'title': '<b>Feature Occurrences</b>',
+                   'title': '<b>Feature Occurrence</b>',
                    'xaxis': {'title': 'feature index'},
                    'yaxis': {'title': 'occurrence'},
                },
