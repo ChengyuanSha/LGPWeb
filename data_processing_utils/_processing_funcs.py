@@ -148,6 +148,7 @@ class ResultProcessing:
         i = 0
         indentation = False
         indentation_level = 1
+        connecting_list = []
         while i < len(original_str):
             current_string = original_str[i]
             vars_in_line = re.findall(r'r\d+', current_string)
@@ -158,12 +159,22 @@ class ResultProcessing:
             # substitute variable index
             for var in vars_in_line:
                 var = var[1:]
-                if int(var) < model.numberOfVariable and int(var) != 0: # calculation variable
-                    current_string = re.sub('r' + re.escape(var), str(round(model.register_[int(var)], 2)),
+                if var in connecting_list: # connecting calculation variable
+                    current_string = re.sub('r' + re.escape(var), 'variable',
                                             current_string)
-                elif int(var) >= model.numberOfVariable and int(var) != 0: # features
-                    name_index = int(var) - model.numberOfVariable
-                    current_string = re.sub('r' + re.escape(var), str(names[name_index]), current_string)
+                else:
+                    if int(var) < model.numberOfVariable and int(var) != 0: # var is calculation variable
+                        if (i+1 < len(original_str)) and var in ( [i[1:] for i in re.findall(r'r\d+', original_str[i+1])] ):
+                            # a calculation variable connecting the two lines in a program
+                            current_string = re.sub('r' + re.escape(var), 'variable',
+                                                    current_string)
+                            connecting_list.append(var)
+                        else: # calculation variable is a constant
+                            current_string = re.sub('r' + re.escape(var), str(round(model.register_[int(var)], 2)),
+                                                current_string)
+                    elif int(var) >= model.numberOfVariable and int(var) != 0: # features
+                        name_index = int(var) - model.numberOfVariable
+                        current_string = re.sub('r' + re.escape(var), str(names[name_index]), current_string)
             # take care of indentation
             if indentation:
                 current_string = current_string[:3] + indentation_level*'  ' + 'then ' + current_string[3:]
@@ -177,7 +188,6 @@ class ResultProcessing:
         s += 'Output register r[0] will then go through sigmoid transformation S \nif S(r[0]) is less or equal ' \
              'than 0.5:\n  this sample will be classified by this model as class 0, i.e. diseased. \nelse:\n' \
              '  class 1, i.e. healthy'
-        # print(s)
         return s
 
     def get_network_data(self, names, top_percentage):
