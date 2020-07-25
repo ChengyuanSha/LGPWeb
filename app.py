@@ -41,24 +41,29 @@ app.layout = html.Div(
             [
                 html.Div(
                     [
-                        html.Img(
-                            src=app.get_asset_url("mib_logo_trans.png"),
-                            id="plotly-image",
-                            style={
-                                "height": "60px",
-                                "width": "auto",
-                                "margin-bottom": "25px",
-                            },
-                        ),
-                        html.Img(
-                            src=app.get_asset_url("queenscomputing.png"),
-                            id="plotly-image2",
-                            style={
-                                "height": "60px",
-                                "width": "auto",
-                                "margin-bottom": "25px",
-                            },
-                        )
+                        html.A([
+                            html.Img(
+                                src=app.get_asset_url("queenscomputing.png"),
+                                id="plotly-image2",
+                                style={
+                                    "height": "60px",
+                                    "width": "auto",
+                                    "margin-bottom": "25px",
+                                },
+                            ),
+                        ], href="https://www.cs.queensu.ca/", target="_blank"),
+
+                        html.A([
+                            html.Img(
+                                src=app.get_asset_url("mib_logo_trans.png"),
+                                id="plotly-image",
+                                style={
+                                    "height": "60px",
+                                    "width": "auto",
+                                    "margin-bottom": "25px",
+                                },
+                            ),
+                        ], href="https://sites.google.com/site/tinghushomepage/", target="_blank"),
                     ],
                     className="one-third column",
                 ),
