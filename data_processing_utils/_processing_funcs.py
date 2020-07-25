@@ -159,15 +159,10 @@ class ResultProcessing:
             # substitute variable index
             for var in vars_in_line:
                 var = var[1:]
-                if var in connecting_list: # connecting calculation variable
-                    current_string = re.sub('r' + re.escape(var), 'variable',
-                                            current_string)
-                else:
+                if var not in connecting_list: # not a connecting calculation variable
                     if int(var) < model.numberOfVariable and int(var) != 0: # var is calculation variable
                         if (i+1 < len(original_str)) and var in ( [i[1:] for i in re.findall(r'r\d+', original_str[i+1])] ):
                             # a calculation variable connecting the two lines in a program
-                            current_string = re.sub('r' + re.escape(var), 'variable',
-                                                    current_string)
                             connecting_list.append(var)
                         else: # calculation variable is a constant
                             current_string = re.sub('r' + re.escape(var), str(round(model.register_[int(var)], 2)),
