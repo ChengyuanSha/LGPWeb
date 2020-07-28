@@ -412,7 +412,8 @@ def render_main_visualization_layout(available_indicators):
                         dcc.Markdown(
                             '''
                             * Top % most common metabolite pairs are represented as edges and their two end points 
-                            * The pairwise co-occurrences are shown as edge weights
+                            * The edge width is proportional to pairwise co-occurrences. The vertex size is proportional
+                            to its occurrence.
                             '''
                         )
 
@@ -527,7 +528,7 @@ def update_co_occurrence_graph(pro_len, result_data, ori_df):
         }
     return {
             'layout': {
-                'title': 'Feature Pairwise Co-occurrence ',
+                'title': '<b>Feature Pairwise Co-occurrence</b>  ',
             }
         }
 
@@ -730,6 +731,7 @@ def create_network(result_data, ori_df, top_percentage):
                     cyto.Cytoscape(
                         id='cytoscape-layout-1',
                         elements=elements,
+                        responsive=True,
                         style={'width': '100%', 'height': '700px'},
                         layout={
                             'name': 'cola',
