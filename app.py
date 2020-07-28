@@ -19,6 +19,9 @@ app = dash.Dash(
     prevent_initial_callbacks=True
 )
 
+# Load extra layouts
+cyto.load_extra_layouts()
+
 app.title = 'LGP'
 
 # Create (server side) disk cache.
@@ -697,7 +700,7 @@ def set_prog_len_value(available_options):
 def create_network(result_data, ori_df, top_percentage):
     top_percentage = top_percentage * 0.01
     names = ResultProcessing.read_dataset_names(ori_df)
-    df = result_data.get_network_data(names, top_percentage)
+    df, node_size_dic = result_data.get_network_data(names, top_percentage)
     # error catching, when no data available
     if df.empty:
         return html.Div(
@@ -712,8 +715,8 @@ def create_network(result_data, ori_df, top_percentage):
         )
     nodes = [
         {
-            'data': {'id': node, 'label': node},
-            'position': {'x': np.random.randint(0, 100), 'y': np.random.randint(0, 100)}
+            'data': {'id': node, 'label': node, 'size': node_size_dic[node]},
+            'position': {'x': np.random.randint(0, 100), 'y': np.random.randint(0, 100)},
         }
         for node in np.unique(df[['f1', 'f2']].values)
     ]
@@ -723,41 +726,48 @@ def create_network(result_data, ori_df, top_percentage):
     ]
     elements = nodes + edges
     return html.Div(
-        html.Div([
-            cyto.Cytoscape(
-                id='cytoscape-layout-1',
-                elements=elements,
-                style={'width': '100%', 'height': '350px'},
-                layout={
-                    'name': 'circle'
-                },
-                zoomingEnabled=False,
-                stylesheet=[
-                    {
-                        'selector': 'node',
-                        'style': {
-                            'label': 'data(label)'
-                        }
-                    },
-                    {
-                        'selector': 'edge',
-                        'style': {
-                            'label': 'data(weight)'
-                        }
-                    },
-                    {
-                        'selector': '[weight > 0]',
-                        'style': {
-                            'line-color': '#CCCCCC'
-                        }
-                    }
-                ]
-            ) # end cytoscape
-        ],
-            className='pretty_container eleven columns',
-        ),
-        className='container-display',
-    )
+                html.Div([
+                    cyto.Cytoscape(
+                        id='cytoscape-layout-1',
+                        elements=elements,
+                        style={'width': '100%', 'height': '700px'},
+                        layout={
+                            'name': 'cola',
+                            'nodeRepulsion': 40000,
+                            'nodeSpacing': 35,
+                        },
+                        zoomingEnabled=False,
+                        stylesheet=[
+                            {
+                                'selector': 'node',
+                                'style': {
+                                    "width": "mapData(size, 0, 100, 20, 60)",
+                                    "height": "mapData(size, 0, 100, 20, 60)",
+                                    "content": "data(label)",
+                                    "font-size": "12px",
+                                    "text-valign": "center",
+                                    "text-halign": "center",
+                                }
+                            },
+                            {
+                                'selector': 'edge',
+                                'style': {
+                                    "opacity": "0.5",
+                                    "width": "mapData(weight, 0, 20, 1, 8)",
+                                    "overlay-padding": "3px",
+                                    "content": "data(weight)",
+                                    "font-size": "10px",
+                                    "text-valign": "center",
+                                    "text-halign": "center",
+                                }
+                            },
+                        ],
+                    ) # end cytoscape
+                ],
+                    className='pretty_container eleven columns',
+                ),
+                className='container-display',
+            )
 
 
 cc.register(app)

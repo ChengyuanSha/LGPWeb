@@ -186,8 +186,11 @@ class ResultProcessing:
         return s
 
     def get_network_data(self, names, top_percentage):
-        # feature index
+        # all feature index
         index = np.asarray([c for c, i in enumerate(self.feature_list)])
+        # get feature occurrence, used as size of the node
+        features, num_of_occurrences, _ = self.get_occurrence_from_feature_list_given_length('All')
+        occurrence_dic = dict(zip(features, num_of_occurrences))
         # filter feature list
         document = self.feature_list[index]
         feature_index = [i for i, _ in enumerate(names)]
@@ -196,49 +199,23 @@ class ResultProcessing:
         co_occurence_rank = []
         appeared = []
         for row, col in zip(rows, cols):
-            # co_occurence_rank.append([ names[row], names[col],
-            #                            np.round(cooc_matrix[row,col]/total_eff_sz*100 ,2)])
             appeared.append((row, col))
             if not ((col, row) in appeared):
-                co_occurence_rank.append([names[row], names[col],
-                                          np.round(cooc_matrix[row, col], 2)])
-        top = int(len(co_occurence_rank) * top_percentage) # get top %
+                co_occurence_rank.append([row, col, np.round(cooc_matrix[row, col], 2)])
+        top = int(len(co_occurence_rank) * top_percentage) # how many in top percent
         co_occurence_rank = sorted(co_occurence_rank, key=lambda x: x[2])[::-1]
-        network_df = pd.DataFrame.from_records(co_occurence_rank[:top])
+        network_df = pd.DataFrame.from_records(co_occurence_rank[:top]) # get top % co_occurenced features
+        # no graph in given selection
         if network_df.empty:
             return network_df
-        network_df.columns = ['f1', 'f2', 'weight']
-        return network_df
+        network_df.columns = ['f1', 'f2', 'weight'] # names of column
+        filtered_index = np.unique(network_df[['f1', 'f2']].values) # index of all vertex in a network
+        network_df['f1'] = names[network_df['f1']]
+        network_df['f2'] = names[network_df['f2']]
+        # using occurrence as node size
+        node_size_dic = { names[i]:occurrence_dic[i] for i in filtered_index}
+        return network_df, node_size_dic
 
-if __name__ == '__main__':
-    # some small testing code
-    result = ResultProcessing()
-    # result.load_models_from_file_path("../dataset/lgp_acc.pkl")
-    # X, y, names = result.readDataRuiJinAD()
-    # result.calculate_featureList_and_calcvariableList()
-    #
-    # df = result.get_network_data(names)
-    # print(df['source'].unique())
-    # print(np.unique(df[['f1', 'f2']].values))
-    # for index, row in df.iterrows():
-    #     print(df['source'][index])
 
-    # prog_index, acc_scores =  result.get_accuracy_given_length(1)
-
-    # index = result.get_index_of_models_given_feature_and_length(105, 3)
-    # print(index)
-    # for i in index:
-    #     print(result.model_list[i].bestEffProgStr_)
-
-    # print(result.model_list[205].bestEffProgStr_)
-    # s = result.convert_program_str_repr(result.model_list[205])
-
-    # co_matrix, featureIndex = result.get_feature_co_occurences_matrix(2)
-    # hover_text = []
-    # for yi, yy in enumerate(featureIndex):
-    #     hover_text.append([])
-    #     for xi, xx in enumerate(featureIndex):
-    #         hover_text[-1].append('X: {}<br />Y: {}<br />Count: {}'.format(xx, yy, co_matrix[xi,yi]))
-    # print(hover_text)
 
 
