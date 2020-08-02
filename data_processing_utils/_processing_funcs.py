@@ -135,6 +135,18 @@ class ResultProcessing:
         cooc_matrix = cooc_matrix.todense()
         return cooc_matrix, feature_index
 
+    def get_cooccurrence_info_given_feature(self, given_feature_index):
+        co_matrix, featureIndex = self.get_feature_co_occurences_matrix('All')
+        featureIndex = np.array(featureIndex)
+        if given_feature_index in featureIndex:
+            f_index = np.where(featureIndex == given_feature_index)
+            f_row = np.array(co_matrix[f_index])
+            nonzero_index = np.where(co_matrix[f_index] > 0)
+            cooccurring_times = f_row[nonzero_index]
+            cooccurring_features_idx = featureIndex[nonzero_index[1]]
+            return cooccurring_times, cooccurring_features_idx
+        return None, None
+
     def get_index_of_models_given_feature_and_length(self, feature_num, given_length):
         if given_length == 'All': # all length
             return [c for c, i in enumerate(self.feature_list) if feature_num in i]
@@ -185,7 +197,7 @@ class ResultProcessing:
              '  class 1, i.e. healthy'
         return s
 
-    def get_network_data(self, names, top_percentage):
+    def get_network_data(self, names, top_percentage, specific_feature=None):
         # all feature index
         index = np.asarray([c for c, i in enumerate(self.feature_list)])
         # get feature occurrence, used as size of the node
@@ -214,7 +226,17 @@ class ResultProcessing:
         network_df['f2'] = names[network_df['f2']]
         # using occurrence as node size
         node_size_dic = { names[i]:occurrence_dic[i] for i in filtered_index}
-        return network_df, node_size_dic
+        if specific_feature:
+            # include 1 degree vertex of this feature
+            df_f = network_df.loc[(network_df['f1'] == specific_feature) | (network_df['f2'] == specific_feature)]
+            # link between 1 degree vertex of this feature
+            other_links = np.unique(df_f[['f1', 'f2']].values)
+            other_links = other_links[other_links != specific_feature]
+            df_other = network_df.loc[(network_df['f1'].isin(other_links)) & (network_df['f2'].isin(other_links))]
+            df_f = df_f.append(df_other, ignore_index=True)
+            return df_f, node_size_dic
+        else:
+            return network_df, node_size_dic
 
 
 

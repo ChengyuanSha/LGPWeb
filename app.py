@@ -22,7 +22,7 @@ app = dash.Dash(
 # Load extra layouts
 cyto.load_extra_layouts()
 
-app.title = 'LGP'
+app.title = 'SMILE'
 
 # Create (server side) disk cache.
 cc = CallbackCache(cache=DiskCache(cache_dir="cache_dir"))
@@ -31,7 +31,7 @@ server = app.server
 
 app.config['suppress_callback_exceptions'] = True
 
-# -------------     layout code    ------------------
+# -------------  html layout code    ------------------
 app.layout = html.Div(
     [
         # The memory store reverts to the default on every page refresh
@@ -184,10 +184,10 @@ app.layout = html.Div(
     style={"display": "flex", "flex-direction": "column"}
 )
 
-
+# -------------  main layout with 3 tabs    ------------------
 def render_main_visualization_layout(available_indicators):
     return html.Div([
-        # ---------- sliders/filters -----------
+        # ---------- global sliders/filters -----------
         html.Div([
 
             html.Div([
@@ -223,10 +223,10 @@ def render_main_visualization_layout(available_indicators):
 
         html.Br(),
 
-        # ------------------   Feature Occurrence  --------------
-
+        # --- three main tabs ----
         dcc.Tabs(children = [
 
+            # ----------------   Feature Occurrence  --------------
             dcc.Tab(label='Feature Importance Analysis', children=[
 
                 html.Div([
@@ -290,7 +290,7 @@ def render_main_visualization_layout(available_indicators):
                                                  'border': 'thin lightgrey solid',
                                                  'overflowX': 'scroll'
                                              }),
-                                ],
+                                    ],
                                     id="accGraphContainer",
                                     className="pretty_container",
                                 )
@@ -384,18 +384,16 @@ def render_main_visualization_layout(available_indicators):
                 style={'width': '25%',
                        'float': 'left'},
                 ), # end sub tabs
-            ]
-            ), # end tab 1
+            ]), # end tab 1
 
-
+            # ------------------- network analysis --------------
             dcc.Tab(label='Co-occurrence Network Analysis', children=[
-                # ---------- network analysis ------------
                 # network filter
                 html.Div(
                     html.Div([
                         dcc.Markdown(
                             '''
-                            ##### Network of Top ____% Most Common Metabolite Pairs  
+                            ##### Network of Top ____% Most Common Metabolite Pairs including this feature
                             '''
                         ),
 
@@ -412,23 +410,72 @@ def render_main_visualization_layout(available_indicators):
                         dcc.Markdown(
                             '''
                             * Top % most common metabolite pairs are represented as edges and their two end points 
-                            * The edge width is proportional to pairwise co-occurrences. The vertex size is proportional
-                            to its occurrence.
+                            * The edge width is proportional to pairwise co-occurrence. The vertex size is proportional 
+                            to individual feature’s occurrence.
                             '''
                         )
 
-                    ],
-                        className="pretty_container eleven columns",
-                    ),
-                    className='container-display'
+                    ], className="pretty_container eleven columns",
+                    ), className='container-display'
                 ),
 
                 # feature network
                 html.Div(id='network'),
             ]), # end tab 2
-            ],
-            style={ 'font-size': '150%' },
-        ), # end tabs
+
+            # ------------------- feature specific analysis --------------
+            dcc.Tab(label='Search a Feature', children=[
+
+                html.Div( [
+                    html.Div([
+                        dcc.Markdown(
+                            '''
+                            ##### Type or select a feature to search
+                            '''),
+
+                        dcc.Dropdown(
+                            id='specific-feature',
+                            options=[{'label': str(i) + ': ' + str(n), 'value': i} for i, n in
+                                     available_indicators],
+                            value='0'
+                        ),
+
+                        html.H6(id='occ-info'),
+
+                        dcc.Graph(
+                            id='cooccurrences-related-to-a-feature',
+                        ),
+                    ], className="pretty_container eleven columns", ),
+                ], className='container-display'),
+
+
+                html.Div([
+                    html.Div([
+                        dcc.Markdown(
+                            '''
+                            ###### Network of Top ____% Most Common Metabolite Pairs  
+                            '''
+                        ),
+
+                        dcc.Slider(
+                            id='sub-network-filter',
+                            min=1,
+                            max=10,
+                            value=3,
+                            marks={str(num): str(num) + '%' for num in range(1, 11, 1)},
+                            step=1,
+                            updatemode='drag'
+                        ),
+                    ], className="pretty_container eleven columns", ),
+                ], className='container-display' ),
+
+
+                html.Div(id='sub-network'),
+
+            ]), # end tab3
+
+            ], style={ 'font-size': '150%' },
+        ), # end main tabs
     ])
 
 
@@ -770,6 +817,136 @@ def create_network(result_data, ori_df, top_percentage):
                 ),
                 className='container-display',
             )
+
+@cc.callback(Output('sub-network', 'children'),
+             [Input('filtered-result-store', 'data'),
+              Input('ori-df-store', 'data'),
+              Input('sub-network-filter', 'value'),
+              Input('specific-feature', 'value')])
+def create_sub_network(result_data, ori_df, top_percentage, specific_feature_index):
+    top_percentage = top_percentage * 0.01
+    names = ResultProcessing.read_dataset_names(ori_df)
+    specific_feature = names[int(specific_feature_index)] # convert index to name
+    df, node_size_dic = result_data.get_network_data(names, top_percentage, specific_feature)
+    # error catching, when no data available
+    if df.empty:
+        return html.Div(
+            html.Div(
+                dcc.Markdown(
+                    '''
+                    ##### No network graph in given selection
+                    '''),
+                className='pretty_container eleven columns',
+            ),
+            className='container-display',
+        )
+    nodes = [
+        {
+            'data': {'id': node, 'label': node, 'size': node_size_dic[node]},
+            'position': {'x': np.random.randint(0, 100), 'y': np.random.randint(0, 100)},
+        }
+        for node in np.unique(df[['f1', 'f2']].values)
+    ]
+    edges = [
+        {'data': {'source': df['f1'][index], 'target': df['f2'][index], 'weight': df['weight'][index]}}
+        for index, row in df.iterrows()
+    ]
+    elements = nodes + edges
+    return html.Div(
+                html.Div([
+                    cyto.Cytoscape(
+                        id='cytoscape-layout-2',
+                        elements=elements,
+                        responsive=True,
+                        style={'width': '100%', 'height': '500px'},
+                        layout={
+                            'name': 'cola',
+                            'nodeRepulsion': 40000,
+                            'nodeSpacing': 35,
+                        },
+                        zoomingEnabled=False,
+                        stylesheet=[
+                            {
+                                'selector': 'node',
+                                'style': {
+                                    "width": "mapData(size, 0, 100, 20, 60)",
+                                    "height": "mapData(size, 0, 100, 20, 60)",
+                                    "content": "data(label)",
+                                    "font-size": "12px",
+                                    "text-valign": "center",
+                                    "text-halign": "center",
+                                }
+                            },
+                            {
+                                'selector': 'edge',
+                                'style': {
+                                    "opacity": "0.5",
+                                    "width": "mapData(weight, 0, 20, 1, 8)",
+                                    "overlay-padding": "3px",
+                                    "content": "data(weight)",
+                                    "font-size": "10px",
+                                    "text-valign": "center",
+                                    "text-halign": "center",
+                                }
+                            },
+                        ],
+                    ) # end cytoscape
+                ],
+                    className='pretty_container eleven columns',
+                ),
+                className='container-display',
+            )
+
+@cc.callback(
+    [Output('occ-info', 'children')],
+    [Input('specific-feature', 'value'),
+     Input('filtered-result-store', 'data'),
+     Input('ori-df-store', 'data')])
+def specific_occurence(specific_f_index, result_data, ori_df):
+    names = ResultProcessing.read_dataset_names(ori_df)
+    result_data.calculate_featureList_and_calcvariableList()
+    features, num_of_occurrences, cur_feature_length = result_data.get_occurrence_from_feature_list_given_length('All')
+    occurrence_dic = dict(zip(features, num_of_occurrences))
+    specific_f = names[int(specific_f_index)]
+    if specific_f_index in occurrence_dic:
+        occurrence_f = occurrence_dic[specific_f_index]
+        return str(specific_f) + " has a occurrence of " + str(occurrence_f)
+    else:
+        return "This feature has zero occurrence"
+
+@cc.callback(
+    [Output('cooccurrences-related-to-a-feature', 'figure')],
+    [Input('specific-feature', 'value'),
+     Input('filtered-result-store', 'data'),
+     Input('ori-df-store', 'data')])
+def update_cooccurrence_bar(specific_f_index, result_data, ori_df):
+    names = ResultProcessing.read_dataset_names(ori_df)
+    cooccurring_times, cooccurring_features_idx = result_data.get_cooccurrence_info_given_feature(specific_f_index)
+    if cooccurring_times is not None: # there os co-occurrence with this feature
+        hover_text = [names[i] for i in cooccurring_features_idx]
+        features = ['f' + str(i) for i in cooccurring_features_idx]
+        return {
+                   'data': [{
+                       'x': features,
+                       'y': cooccurring_times,
+                       'type': 'bar',
+                       'hoverinfo': 'text',
+                       'text': hover_text
+                   }],
+                   'layout': {
+                       'title': '<b>Co-occurring Features</b>',
+                       'xaxis': {'title': 'feature index'},
+                       'yaxis': {'title': 'occurrence'},
+                   },
+               }
+    else:
+        return {
+            'layout': {
+                'title': '<b>>Co-occurring Features</b>  ',
+            }
+        }
+
+
 
 
 cc.register(app)
