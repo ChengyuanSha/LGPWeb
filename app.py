@@ -393,7 +393,7 @@ def render_main_visualization_layout(available_indicators):
                     html.Div([
                         dcc.Markdown(
                             '''
-                            ##### Network of Top ____% Most Common Metabolite Pairs including this feature
+                            ##### Network of Top ____% Most Common Metabolite Pairs 
                             '''
                         ),
 
@@ -453,7 +453,7 @@ def render_main_visualization_layout(available_indicators):
                     html.Div([
                         dcc.Markdown(
                             '''
-                            ###### Network of Top ____% Most Common Metabolite Pairs  
+                            ###### Network of Top ____% Most Common Metabolite Pairs including this feature
                             '''
                         ),
 
