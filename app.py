@@ -149,8 +149,9 @@ app.layout = html.Div(
                     ),
                     href=os.path.join('assets', 'sample_data', 'lgp_sample.pkl'),
                     download='lgp_sample.pkl',
-                    className="four columns"
                 ),
+
+                html.Div(className="divider"),
 
                 html.A(
                     html.Button(
@@ -159,17 +160,20 @@ app.layout = html.Div(
                     ),
                     href=os.path.join('assets', 'sample_data', 'sample_alzheimer_vs_normal.csv'),
                     download='sample_alzheimer_vs_normal.csv',
-                    className="four columns"
+                    # className="divider"
                 ),
+
+                html.Div(className="divider"),
 
                 html.Button(
                     "Refresh Result",
                     id="main-render-button",
-                    className="three columns"
+                    # className="divider"
                 )
             ],
-                className="row"
+                className="u-pull-left"
             ),
+            html.Br(),
             html.Br(),
         ],
         ),
@@ -180,6 +184,7 @@ app.layout = html.Div(
     id="mainContainer",
     style={"display": "flex", "flex-direction": "column"}
 )
+
 
 # -------------  main layout with 3 tabs    ------------------
 def render_main_visualization_layout(available_indicators):
@@ -221,7 +226,7 @@ def render_main_visualization_layout(available_indicators):
         html.Br(),
 
         # --- three main tabs ----
-        dcc.Tabs(children = [
+        dcc.Tabs(children=[
 
             # ----------------   Feature Occurrence  --------------
             dcc.Tab(label='Feature Importance Analysis', children=[
@@ -241,7 +246,7 @@ def render_main_visualization_layout(available_indicators):
                          html.P("models after selection")],
                         className="pretty_container four columns",
                     )
-                    ],
+                ],
                     className="row container-display"
                 ),
 
@@ -263,7 +268,7 @@ def render_main_visualization_layout(available_indicators):
                                 dcc.Graph(
                                     id='filtered-occurrences-scatter',
                                 )
-                                ],
+                            ],
                                 id="left-column",
                                 className="pretty_container six columns",
                             ),
@@ -287,15 +292,15 @@ def render_main_visualization_layout(available_indicators):
                                                  'border': 'thin lightgrey solid',
                                                  'overflowX': 'scroll'
                                              }),
-                                    ],
+                                ],
                                     id="accGraphContainer",
                                     className="pretty_container",
                                 )
-                                ],
+                            ],
                                 className="six columns",
                             ),
 
-                            ],
+                        ],
                             className="row flex-display",
                         ),
                     ]),
@@ -309,11 +314,11 @@ def render_main_visualization_layout(available_indicators):
                                     * Click on a cell in **Feature Pairwise Co-occurrence graph** to see 
                                     the scatter plot on the right side.   
                                 '''),
-                                ], className="pretty_container twelve columns"
+                            ], className="pretty_container twelve columns"
                             ),
-                            ],
+                        ],
                             className="row flex-display",
-                            #style={'align-items': 'center', 'justify-content': 'center'},
+                            # style={'align-items': 'center', 'justify-content': 'center'},
                         ),
 
                         # Two Feature Comparision in the website
@@ -330,7 +335,7 @@ def render_main_visualization_layout(available_indicators):
                             ],
                                 id='left-column',
                                 className="pretty_container four columns"
-                            ), # end co-occurrence
+                            ),  # end co-occurrence
 
                             # Two feature scatter plot, update based on x, y filter, see the callback
                             html.Div([
@@ -365,7 +370,7 @@ def render_main_visualization_layout(available_indicators):
                                 dcc.Graph(
                                     id='scatter',
                                 )
-                                ], id='right-column',
+                            ], id='right-column',
                                 className="pretty_container eight columns",
                             ),
                         ],
@@ -373,15 +378,15 @@ def render_main_visualization_layout(available_indicators):
                         ),
                     ]),
                 ],
-                vertical=True,
-                parent_style={'flex-direction': 'column',
-                              '-webkit-flex-direction': 'column',
-                              '-ms-flex-direction': 'column',
-                              'display': 'flex'},
-                style={'width': '25%',
-                       'float': 'left'},
-                ), # end sub tabs
-            ]), # end tab 1
+                    vertical=True,
+                    parent_style={'flex-direction': 'column',
+                                  '-webkit-flex-direction': 'column',
+                                  '-ms-flex-direction': 'column',
+                                  'display': 'flex'},
+                    style={'width': '25%',
+                           'float': 'left'},
+                ),  # end sub tabs
+            ]),  # end tab 1
 
             # ------------------- network analysis --------------
             dcc.Tab(label='Co-occurrence Network Analysis', children=[
@@ -418,12 +423,12 @@ def render_main_visualization_layout(available_indicators):
 
                 # feature network
                 html.Div(id='network'),
-            ]), # end tab 2
+            ]),  # end tab 2
 
             # ------------------- feature specific analysis --------------
             dcc.Tab(label='Search a Feature', children=[
 
-                html.Div( [
+                html.Div([
                     html.Div([
                         dcc.Markdown(
                             '''
@@ -445,7 +450,6 @@ def render_main_visualization_layout(available_indicators):
                     ], className="pretty_container eleven columns", ),
                 ], className='container-display'),
 
-
                 html.Div([
                     html.Div([
                         dcc.Markdown(
@@ -464,15 +468,14 @@ def render_main_visualization_layout(available_indicators):
                             updatemode='drag'
                         ),
                     ], className="pretty_container eleven columns", ),
-                ], className='container-display' ),
-
+                ], className='container-display'),
 
                 html.Div(id='sub-network'),
 
-            ]), # end tab3
+            ]),  # end tab3
 
-            ], style={ 'font-size': '150%' },
-        ), # end main tabs
+        ], style={'font-size': '150%'},
+        ),  # end main tabs
     ])
 
 
@@ -482,11 +485,11 @@ def render_main_visualization_layout(available_indicators):
      Input('prog-len-filter-slider', 'value'),
      Input('filtered-result-store', 'data'),
      Input('ori-df-store', 'data')])
-def update_model_accuracy_graph(clickData, prog_len, result_data, ori_df):
+def update_model_accuracy_graph(click_data, prog_len, result_data, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
-    if clickData is not None:
+    if click_data is not None:
         result_data.calculate_featureList_and_calcvariableList()
-        feature_num = int(clickData['points'][0]['x'][1:])  # extract feature index data from click
+        feature_num = int(click_data['points'][0]['x'][1:])  # extract feature index data from click
         m_index = result_data.get_index_of_models_given_feature_and_length(feature_num, prog_len)
         testing_acc = [result_data.model_list[i].testingAccuracy for i in m_index]
         m_index = ['m' + str(i) for i in m_index]
@@ -499,14 +502,13 @@ def update_model_accuracy_graph(clickData, prog_len, result_data, ori_df):
                  },
             ],
             'layout': {
-                'title': '<b>Model Accuracy</b>'+ '<br>' + 'Models containing feature ' + str(names[feature_num]) ,
+                'title': '<b>Model Accuracy</b>' + '<br>' + 'Models containing feature ' + str(names[feature_num]),
                 'xaxis': {'title': 'model index'},
                 'yaxis': {'title': 'accuracy'},
                 'clickmode': 'event+select'
             }
         }
-    return {'layout':
-            {'title': '<b>Model Accuracy</b>'}}
+    return {'layout': {'title': '<b>Model Accuracy</b>'}}
 
 
 @app.callback(
@@ -571,10 +573,10 @@ def update_feature_pairwise_co_occurrence_graph(pro_len, result_data, ori_df):
             }
         }
     return {
-            'layout': {
-                'title': '<b>Feature Pairwise Co-occurrence</b>  ',
-            }
+        'layout': {
+            'title': '<b>Feature Pairwise Co-occurrence</b>  ',
         }
+    }
 
 
 @app.callback(
@@ -625,6 +627,7 @@ def update_two_feature_scatter_plot_using_filters(xaxis_column_index, yaxis_colu
         )
     }
 
+
 @app.callback(
     Output('model-click-data', 'children'),
     [Input('filtered-accuracy-scatter', 'clickData'),
@@ -657,8 +660,8 @@ def parse_contents_result(contents, filename):
 
 
 @app.callback([ServersideOutput('raw-result-store', 'data')],
-                    [Input('upload-result-data', 'contents')],
-                    [State('upload-result-data', 'filename')], memoize=True)
+              [Input('upload-result-data', 'contents')],
+              [State('upload-result-data', 'filename')], memoize=True)
 def update_file_output(contents, filename):
     # display read file status and update main visualization Div
     if contents is None:
@@ -683,8 +686,8 @@ def parse_contents_ori(contents, filename):
 
 
 @app.callback([ServersideOutput('ori-df-store', 'data')],
-                   [Input('upload-ori', 'contents')],
-                    [State('upload-ori', 'filename')], memoize=True)
+              [Input('upload-ori', 'contents')],
+              [State('upload-ori', 'filename')], memoize=True)
 def update_file_output(contents, filename):
     if contents is None:
         raise PreventUpdate
@@ -695,8 +698,8 @@ def update_file_output(contents, filename):
 # --- end upload data section ---
 
 @app.callback([Output('main-visualization-content', 'children')],
-             [Input('main-render-button', 'n_clicks'),
-              Input('ori-df-store', 'data')],)
+              [Input('main-render-button', 'n_clicks'),
+               Input('ori-df-store', 'data')], )
 def update_main_page(n_clicks, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     index_list = [i for i in range(len(names))]
@@ -706,15 +709,16 @@ def update_main_page(n_clicks, ori_df):
     else:
         return render_main_visualization_layout(available_indicators)
 
+
 @app.callback([Output('ori_model_count', 'children')],
-             [Trigger('prog-len-filter-slider', 'value'),
-              Input('raw-result-store', 'data')])
+              [Trigger('prog-len-filter-slider', 'value'),
+               Input('raw-result-store', 'data')])
 def display_ori_count(raw_result):
     return str(len(raw_result.model_list))
 
 
 @app.callback([Output('prog-len-filter-slider', 'options')],
-             [Input('filtered-result-store', 'data')])
+              [Input('filtered-result-store', 'data')])
 def set_prog_len_radiobutton_and_update_filtered_data(result_data):
     result_data.calculate_featureList_and_calcvariableList()
     length_list = sorted(list(set([len(i) for i in result_data.feature_list])))
@@ -723,8 +727,8 @@ def set_prog_len_radiobutton_and_update_filtered_data(result_data):
 
 
 @app.callback([ServersideOutput('filtered-result-store', 'data')],
-                    [Input('testing-acc-filter-slider', 'value'),
-                     Input('raw-result-store', 'data')], memoize=True)
+              [Input('testing-acc-filter-slider', 'value'),
+               Input('raw-result-store', 'data')], memoize=True)
 def update_filtered_data(testing_acc, result_data):
     result_data.model_list = [i for i in result_data.model_list if
                               float(i.testingAccuracy) >= ((testing_acc) / 100)]
@@ -733,15 +737,15 @@ def update_filtered_data(testing_acc, result_data):
 
 
 @app.callback(Output('prog-len-filter-slider', 'value'),
-             [Input('prog-len-filter-slider', 'options')])
+              [Input('prog-len-filter-slider', 'options')])
 def set_prog_len_value(available_options):
     return available_options[0]['value']
 
 
 @app.callback(Output('network', 'children'),
-             [Input('filtered-result-store', 'data'),
-              Input('ori-df-store', 'data'),
-              Input('network-filter', 'value')])
+              [Input('filtered-result-store', 'data'),
+               Input('ori-df-store', 'data'),
+               Input('network-filter', 'value')])
 def create_network(result_data, ori_df, top_percentage):
     top_percentage = top_percentage * 0.01
     names = ResultProcessing.read_dataset_names(ori_df)
@@ -771,59 +775,60 @@ def create_network(result_data, ori_df, top_percentage):
     ]
     elements = nodes + edges
     return html.Div(
-                html.Div([
-                    cyto.Cytoscape(
-                        id='cytoscape-layout-1',
-                        elements=elements,
-                        responsive=True,
-                        style={'width': '100%', 'height': '700px'},
-                        layout={
-                            'name': 'cola',
-                            'nodeRepulsion': 40000,
-                            'nodeSpacing': 35,
-                        },
-                        zoomingEnabled=False,
-                        stylesheet=[
-                            {
-                                'selector': 'node',
-                                'style': {
-                                    "width": "mapData(size, 0, 100, 20, 60)",
-                                    "height": "mapData(size, 0, 100, 20, 60)",
-                                    "content": "data(label)",
-                                    "font-size": "12px",
-                                    "text-valign": "center",
-                                    "text-halign": "center",
-                                }
-                            },
-                            {
-                                'selector': 'edge',
-                                'style': {
-                                    "opacity": "0.5",
-                                    "width": "mapData(weight, 0, 20, 1, 8)",
-                                    "overlay-padding": "3px",
-                                    "content": "data(weight)",
-                                    "font-size": "10px",
-                                    "text-valign": "center",
-                                    "text-halign": "center",
-                                }
-                            },
-                        ],
-                    ) # end cytoscape
+        html.Div([
+            cyto.Cytoscape(
+                id='cytoscape-layout-1',
+                elements=elements,
+                responsive=True,
+                style={'width': '100%', 'height': '700px'},
+                layout={
+                    'name': 'cola',
+                    'nodeRepulsion': 40000,
+                    'nodeSpacing': 35,
+                },
+                zoomingEnabled=False,
+                stylesheet=[
+                    {
+                        'selector': 'node',
+                        'style': {
+                            "width": "mapData(size, 0, 100, 20, 60)",
+                            "height": "mapData(size, 0, 100, 20, 60)",
+                            "content": "data(label)",
+                            "font-size": "12px",
+                            "text-valign": "center",
+                            "text-halign": "center",
+                        }
+                    },
+                    {
+                        'selector': 'edge',
+                        'style': {
+                            "opacity": "0.5",
+                            "width": "mapData(weight, 0, 20, 1, 8)",
+                            "overlay-padding": "3px",
+                            "content": "data(weight)",
+                            "font-size": "10px",
+                            "text-valign": "center",
+                            "text-halign": "center",
+                        }
+                    },
                 ],
-                    className='pretty_container eleven columns',
-                ),
-                className='container-display',
-            )
+            )  # end cytoscape
+        ],
+            className='pretty_container eleven columns',
+        ),
+        className='container-display',
+    )
+
 
 @app.callback(Output('sub-network', 'children'),
-             [Input('filtered-result-store', 'data'),
-              Input('ori-df-store', 'data'),
-              Input('sub-network-filter', 'value'),
-              Input('specific-feature', 'value')])
+              [Input('filtered-result-store', 'data'),
+               Input('ori-df-store', 'data'),
+               Input('sub-network-filter', 'value'),
+               Input('specific-feature', 'value')])
 def create_sub_network(result_data, ori_df, top_percentage, specific_feature_index):
     top_percentage = top_percentage * 0.01
     names = ResultProcessing.read_dataset_names(ori_df)
-    specific_feature = names[int(specific_feature_index)] # convert index to name
+    specific_feature = names[int(specific_feature_index)]  # convert index to name
     df, node_size_dic = result_data.get_network_data(names, top_percentage, specific_feature)
     # error catching, when no data available
     if df.empty:
@@ -850,49 +855,50 @@ def create_sub_network(result_data, ori_df, top_percentage, specific_feature_ind
     ]
     elements = nodes + edges
     return html.Div(
-                html.Div([
-                    cyto.Cytoscape(
-                        id='cytoscape-layout-2',
-                        elements=elements,
-                        responsive=True,
-                        style={'width': '100%', 'height': '500px'},
-                        layout={
-                            'name': 'cola',
-                            'nodeRepulsion': 40000,
-                            'nodeSpacing': 35,
-                        },
-                        zoomingEnabled=False,
-                        stylesheet=[
-                            {
-                                'selector': 'node',
-                                'style': {
-                                    "width": "mapData(size, 0, 100, 20, 60)",
-                                    "height": "mapData(size, 0, 100, 20, 60)",
-                                    "content": "data(label)",
-                                    "font-size": "12px",
-                                    "text-valign": "center",
-                                    "text-halign": "center",
-                                }
-                            },
-                            {
-                                'selector': 'edge',
-                                'style': {
-                                    "opacity": "0.5",
-                                    "width": "mapData(weight, 0, 20, 1, 8)",
-                                    "overlay-padding": "3px",
-                                    "content": "data(weight)",
-                                    "font-size": "10px",
-                                    "text-valign": "center",
-                                    "text-halign": "center",
-                                }
-                            },
-                        ],
-                    ) # end cytoscape
+        html.Div([
+            cyto.Cytoscape(
+                id='cytoscape-layout-2',
+                elements=elements,
+                responsive=True,
+                style={'width': '100%', 'height': '500px'},
+                layout={
+                    'name': 'cola',
+                    'nodeRepulsion': 40000,
+                    'nodeSpacing': 35,
+                },
+                zoomingEnabled=False,
+                stylesheet=[
+                    {
+                        'selector': 'node',
+                        'style': {
+                            "width": "mapData(size, 0, 100, 20, 60)",
+                            "height": "mapData(size, 0, 100, 20, 60)",
+                            "content": "data(label)",
+                            "font-size": "12px",
+                            "text-valign": "center",
+                            "text-halign": "center",
+                        }
+                    },
+                    {
+                        'selector': 'edge',
+                        'style': {
+                            "opacity": "0.5",
+                            "width": "mapData(weight, 0, 20, 1, 8)",
+                            "overlay-padding": "3px",
+                            "content": "data(weight)",
+                            "font-size": "10px",
+                            "text-valign": "center",
+                            "text-halign": "center",
+                        }
+                    },
                 ],
-                    className='pretty_container eleven columns',
-                ),
-                className='container-display',
-            )
+            )  # end cytoscape
+        ],
+            className='pretty_container eleven columns',
+        ),
+        className='container-display',
+    )
+
 
 @app.callback(
     [Output('occ-info', 'children')],
@@ -911,6 +917,7 @@ def specific_feature_occurrence(specific_f_index, result_data, ori_df):
     else:
         return "This feature has zero occurrence"
 
+
 @app.callback(
     [Output('cooccurrences-related-to-a-feature', 'figure')],
     [Input('specific-feature', 'value'),
@@ -919,23 +926,23 @@ def specific_feature_occurrence(specific_f_index, result_data, ori_df):
 def update_co_occurrence_bar(specific_f_index, result_data, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     cooccurring_times, cooccurring_features_idx = result_data.get_cooccurrence_info_given_feature(specific_f_index)
-    if cooccurring_times is not None: # there os co-occurrence with this feature
+    if cooccurring_times is not None:  # there os co-occurrence with this feature
         hover_text = [names[i] for i in cooccurring_features_idx]
         features = ['f' + str(i) for i in cooccurring_features_idx]
         return {
-                   'data': [{
-                       'x': features,
-                       'y': cooccurring_times,
-                       'type': 'bar',
-                       'hoverinfo': 'text',
-                       'text': hover_text
-                   }],
-                   'layout': {
-                       'title': '<b>Co-occurring Features</b>',
-                       'xaxis': {'title': 'feature index'},
-                       'yaxis': {'title': 'occurrence'},
-                   },
-               }
+            'data': [{
+                'x': features,
+                'y': cooccurring_times,
+                'type': 'bar',
+                'hoverinfo': 'text',
+                'text': hover_text
+            }],
+            'layout': {
+                'title': '<b>Co-occurring Features</b>',
+                'xaxis': {'title': 'feature index'},
+                'yaxis': {'title': 'occurrence'},
+            },
+        }
     else:
         return {
             'layout': {
