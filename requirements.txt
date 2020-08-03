@@ -9,5 +9,5 @@ dash-html-components==1.0.3
 dash-core-components==1.10.0
 gunicorn==20.0.4
 lgp==0.0.2
-dash-extensions==0.0.19rc4
+dash-extensions==0.0.27rc1
 dash_cytoscape==0.2.0

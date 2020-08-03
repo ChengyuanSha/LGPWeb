@@ -7,25 +7,22 @@ import io
 import dash_core_components as dcc
 import dash_cytoscape as cyto
 import dash_html_components as html
-from dash.dependencies import Input, Output, State
+
 from data_processing_utils._processing_funcs import ResultProcessing
 from dash.exceptions import PreventUpdate
 
-from dash_extensions.callback import CallbackCache, DiskCache
+from dash_extensions.enrich import Dash, Output, Input, State, Trigger, ServersideOutput
 
-app = dash.Dash(
+app = Dash(
     __name__,
     meta_tags=[{"name": "viewport", "content": "width=device-width"}],
-    prevent_initial_callbacks=True
+    prevent_initial_callbacks=True,
 )
 
 # Load extra layouts
 cyto.load_extra_layouts()
 
 app.title = 'SMILE'
-
-# Create (server side) disk cache.
-cc = CallbackCache(cache=DiskCache(cache_dir="cache_dir"))
 
 server = app.server
 
@@ -35,9 +32,9 @@ app.config['suppress_callback_exceptions'] = True
 app.layout = html.Div(
     [
         # The memory store reverts to the default on every page refresh
-        dcc.Loading(dcc.Store(id='filtered-result-store'), fullscreen=True),
-        dcc.Loading(dcc.Store(id='raw-result-store'), fullscreen=True),
-        dcc.Loading(dcc.Store(id='ori-df-store'), fullscreen=True),
+        dcc.Loading(dcc.Store(id='filtered-result-store'), fullscreen=True, type="circle"),
+        dcc.Loading(dcc.Store(id='raw-result-store'), fullscreen=True, type="circle"),
+        dcc.Loading(dcc.Store(id='ori-df-store'), fullscreen=True, type="circle"),
 
         # --- website title ---
         html.Div(
@@ -393,7 +390,7 @@ def render_main_visualization_layout(available_indicators):
                     html.Div([
                         dcc.Markdown(
                             '''
-                            ##### Network of Top ____% Most Common Metabolite Pairs 
+                            ##### Network of Top ____% Most Common Metabolite Pairs  
                             '''
                         ),
 
@@ -479,13 +476,13 @@ def render_main_visualization_layout(available_indicators):
     ])
 
 
-@cc.callback(
+@app.callback(
     Output('filtered-accuracy-scatter', 'figure'),
     [Input('filtered-occurrences-scatter', 'clickData'),
      Input('prog-len-filter-slider', 'value'),
      Input('filtered-result-store', 'data'),
      Input('ori-df-store', 'data')])
-def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data, ori_df):
+def update_model_accuracy_graph(clickData, prog_len, result_data, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     if clickData is not None:
         result_data.calculate_featureList_and_calcvariableList()
@@ -512,14 +509,14 @@ def update_accuracy_graph_based_on_clicks(clickData, prog_len, result_data, ori_
             {'title': '<b>Model Accuracy</b>'}}
 
 
-@cc.callback(
+@app.callback(
     [Output('filtered-occurrences-scatter', 'figure'),
      Output("filtered_by_accuracy_text", "children"),
      Output("filtered_by_len_text", "children")],
     [Input('prog-len-filter-slider', 'value'),
      Input('filtered-result-store', 'data'),
      Input('ori-df-store', 'data')])
-def update_occurrence_graph(pro_len, result_data, ori_df):
+def update_feature_occurrence_graph(pro_len, result_data, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     result_data.calculate_featureList_and_calcvariableList()
     features, num_of_occurrences, cur_feature_num = result_data.get_occurrence_from_feature_list_given_length(pro_len)
@@ -541,12 +538,12 @@ def update_occurrence_graph(pro_len, result_data, ori_df):
            }, len(result_data.model_list), cur_feature_num
 
 
-@cc.callback(
+@app.callback(
     Output('co-occurrence-graph', 'figure'),
     [Input('prog-len-filter-slider', 'value'),
      Input('filtered-result-store', 'data'),
      Input('ori-df-store', 'data')])
-def update_co_occurrence_graph(pro_len, result_data, ori_df):
+def update_feature_pairwise_co_occurrence_graph(pro_len, result_data, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     # result_data = jsonpickle.decode(result_data)
     result_data.calculate_featureList_and_calcvariableList()
@@ -580,14 +577,14 @@ def update_co_occurrence_graph(pro_len, result_data, ori_df):
         }
 
 
-@cc.callback(
+@app.callback(
     Output('scatter', 'figure'),
-    [Input('prog-len-filter-slider', 'value'),
+    [Trigger('prog-len-filter-slider', 'value'),
      Input('crossfilter-xaxis-column', 'value'),
      Input('crossfilter-yaxis-column', 'value'),
      Input('co-occurrence-graph', 'clickData'),
      Input('ori-df-store', 'data')])
-def update_feature_comparision_graph_using_filters(trigger, xaxis_column_index, yaxis_column_index, co_click_data, ori_df):
+def update_two_feature_scatter_plot_using_filters(xaxis_column_index, yaxis_column_index, co_click_data, ori_df):
     X, y = ResultProcessing.read_dataset_X_y(ori_df)
     names = ResultProcessing.read_dataset_names(ori_df)
     ctx = dash.callback_context
@@ -628,12 +625,12 @@ def update_feature_comparision_graph_using_filters(trigger, xaxis_column_index, 
         )
     }
 
-@cc.callback(
+@app.callback(
     Output('model-click-data', 'children'),
     [Input('filtered-accuracy-scatter', 'clickData'),
      Input('filtered-result-store', 'data'),
      Input('ori-df-store', 'data')])
-def update_model_click_data(clickData, result_data, ori_df):
+def update_detailed_model_info(clickData, result_data, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     if clickData is not None:
         i = int(clickData['points'][0]['x'][1:])
@@ -659,9 +656,9 @@ def parse_contents_result(contents, filename):
         )
 
 
-@cc.cached_callback([Output('raw-result-store', 'data')],
+@app.callback([ServersideOutput('raw-result-store', 'data')],
                     [Input('upload-result-data', 'contents')],
-                    [State('upload-result-data', 'filename')])
+                    [State('upload-result-data', 'filename')], memoize=True)
 def update_file_output(contents, filename):
     # display read file status and update main visualization Div
     if contents is None:
@@ -685,9 +682,9 @@ def parse_contents_ori(contents, filename):
         )
 
 
-@cc.cached_callback([Output('ori-df-store', 'data')],
-                    [Input('upload-ori', 'contents')],
-                    [State('upload-ori', 'filename')])
+@app.callback([ServersideOutput('ori-df-store', 'data')],
+                   [Input('upload-ori', 'contents')],
+                    [State('upload-ori', 'filename')], memoize=True)
 def update_file_output(contents, filename):
     if contents is None:
         raise PreventUpdate
@@ -697,9 +694,9 @@ def update_file_output(contents, filename):
 
 # --- end upload data section ---
 
-@cc.callback([Output('main-visualization-content', 'children')],
+@app.callback([Output('main-visualization-content', 'children')],
              [Input('main-render-button', 'n_clicks'),
-              Input('ori-df-store', 'data')])
+              Input('ori-df-store', 'data')],)
 def update_main_page(n_clicks, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     index_list = [i for i in range(len(names))]
@@ -709,14 +706,14 @@ def update_main_page(n_clicks, ori_df):
     else:
         return render_main_visualization_layout(available_indicators)
 
-@cc.callback([Output('ori_model_count', 'children')],
-             [Input('prog-len-filter-slider', 'value'),
+@app.callback([Output('ori_model_count', 'children')],
+             [Trigger('prog-len-filter-slider', 'value'),
               Input('raw-result-store', 'data')])
-def display_ori_count(trigger, raw_result):
+def display_ori_count(raw_result):
     return str(len(raw_result.model_list))
 
 
-@cc.callback([Output('prog-len-filter-slider', 'options')],
+@app.callback([Output('prog-len-filter-slider', 'options')],
              [Input('filtered-result-store', 'data')])
 def set_prog_len_radiobutton_and_update_filtered_data(result_data):
     result_data.calculate_featureList_and_calcvariableList()
@@ -725,9 +722,9 @@ def set_prog_len_radiobutton_and_update_filtered_data(result_data):
     return [{'label': str(i), 'value': i} for i in length_list] + [{'label': 'All', 'value': 'All'}]
 
 
-@cc.cached_callback([Output('filtered-result-store', 'data')],
+@app.callback([ServersideOutput('filtered-result-store', 'data')],
                     [Input('testing-acc-filter-slider', 'value'),
-                     Input('raw-result-store', 'data')])
+                     Input('raw-result-store', 'data')], memoize=True)
 def update_filtered_data(testing_acc, result_data):
     result_data.model_list = [i for i in result_data.model_list if
                               float(i.testingAccuracy) >= ((testing_acc) / 100)]
@@ -735,13 +732,13 @@ def update_filtered_data(testing_acc, result_data):
     return result_data
 
 
-@cc.callback(Output('prog-len-filter-slider', 'value'),
+@app.callback(Output('prog-len-filter-slider', 'value'),
              [Input('prog-len-filter-slider', 'options')])
 def set_prog_len_value(available_options):
     return available_options[0]['value']
 
 
-@cc.callback(Output('network', 'children'),
+@app.callback(Output('network', 'children'),
              [Input('filtered-result-store', 'data'),
               Input('ori-df-store', 'data'),
               Input('network-filter', 'value')])
@@ -818,7 +815,7 @@ def create_network(result_data, ori_df, top_percentage):
                 className='container-display',
             )
 
-@cc.callback(Output('sub-network', 'children'),
+@app.callback(Output('sub-network', 'children'),
              [Input('filtered-result-store', 'data'),
               Input('ori-df-store', 'data'),
               Input('sub-network-filter', 'value'),
@@ -897,12 +894,12 @@ def create_sub_network(result_data, ori_df, top_percentage, specific_feature_ind
                 className='container-display',
             )
 
-@cc.callback(
+@app.callback(
     [Output('occ-info', 'children')],
     [Input('specific-feature', 'value'),
      Input('filtered-result-store', 'data'),
      Input('ori-df-store', 'data')])
-def specific_occurence(specific_f_index, result_data, ori_df):
+def specific_feature_occurrence(specific_f_index, result_data, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     result_data.calculate_featureList_and_calcvariableList()
     features, num_of_occurrences, cur_feature_length = result_data.get_occurrence_from_feature_list_given_length('All')
@@ -914,12 +911,12 @@ def specific_occurence(specific_f_index, result_data, ori_df):
     else:
         return "This feature has zero occurrence"
 
-@cc.callback(
+@app.callback(
     [Output('cooccurrences-related-to-a-feature', 'figure')],
     [Input('specific-feature', 'value'),
      Input('filtered-result-store', 'data'),
      Input('ori-df-store', 'data')])
-def update_cooccurrence_bar(specific_f_index, result_data, ori_df):
+def update_co_occurrence_bar(specific_f_index, result_data, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     cooccurring_times, cooccurring_features_idx = result_data.get_cooccurrence_info_given_feature(specific_f_index)
     if cooccurring_times is not None: # there os co-occurrence with this feature
@@ -942,14 +939,10 @@ def update_cooccurrence_bar(specific_f_index, result_data, ori_df):
     else:
         return {
             'layout': {
-                'title': '<b>>Co-occurring Features</b>  ',
+                'title': '<b>Co-occurring Features</b>  ',
             }
         }
 
-
-
-
-cc.register(app)
 
 # Running server
 if __name__ == "__main__":
