@@ -432,7 +432,7 @@ def render_main_visualization_layout(available_indicators):
                     html.Div([
                         dcc.Markdown(
                             '''
-                            ##### Type or select a feature to search
+                            ##### Type or select a feature 
                             '''),
 
                         dcc.Dropdown(
@@ -454,7 +454,8 @@ def render_main_visualization_layout(available_indicators):
                     html.Div([
                         dcc.Markdown(
                             '''
-                            ###### Network of Top ____% Most Common Metabolite Pairs including this feature
+                            ###### Co-occurrence sub-network of this feature and its one-step neighbours   
+                            ###### Top ___% most common metabolite pairs (of all possible pairs)
                             '''
                         ),
 
@@ -913,7 +914,7 @@ def specific_feature_occurrence(specific_f_index, result_data, ori_df):
     specific_f = names[int(specific_f_index)]
     if specific_f_index in occurrence_dic:
         occurrence_f = occurrence_dic[specific_f_index]
-        return str(specific_f) + " has a occurrence of " + str(occurrence_f)
+        return str(specific_f) + " appears in " + str(occurrence_f) + " models."
     else:
         return "This feature has zero occurrence"
 
@@ -940,7 +941,7 @@ def update_co_occurrence_bar(specific_f_index, result_data, ori_df):
             'layout': {
                 'title': '<b>Co-occurring Features</b>',
                 'xaxis': {'title': 'feature index'},
-                'yaxis': {'title': 'occurrence'},
+                'yaxis': {'title': 'co-occurrence'},
             },
         }
     else:
