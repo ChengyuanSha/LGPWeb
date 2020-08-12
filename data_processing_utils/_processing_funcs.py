@@ -237,7 +237,3 @@ class ResultProcessing:
             return df_f, node_size_dic
         else:
             return network_df, node_size_dic
-
-
-
-
