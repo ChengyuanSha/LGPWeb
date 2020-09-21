@@ -103,7 +103,7 @@ app.layout = html.Div(
         html.Div([
             dcc.Markdown(
                 '''
-                ##### Upload your data here. Your data will be removed after refreshing the page.
+                ##### Check instructions on github README, you need to run algorithm first then upload the two result files here. 
                 '''),
             # pickle file upload
             html.Div([
@@ -654,10 +654,11 @@ def parse_contents_result(contents, filename):
             return result
     except Exception as e:
         print(e)
-        return html.Div([
-            'There was an error processing this file.'
-        ],
-        )
+        raise ValueError('There was an error processing this file.')
+        # return html.Div([
+        #     'There was an error processing this file.'
+        # ],
+        # )
 
 
 @app.callback([ServersideOutput('raw-result-store', 'data')],
