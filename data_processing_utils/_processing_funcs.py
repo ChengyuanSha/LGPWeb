@@ -161,6 +161,7 @@ class ResultProcessing:
         indentation = False
         indentation_level = 1
         connecting_list = []
+        s = s + "The default value of r0: " + str(round(model.register_[model.numberOfInput], 2)) + "\nModels:\n"
         while i < len(original_str):
             current_string = original_str[i]
             vars_in_line = re.findall(r'r\d+', current_string)
