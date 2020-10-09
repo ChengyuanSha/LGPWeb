@@ -239,7 +239,7 @@ def render_main_visualization_layout(available_indicators):
 
                 html.Div([
                     html.Div([
-                        html.H6('Look at model with ____ effective features'),
+                        html.H6('Look at models with ____ effective features'),
 
                         dcc.RadioItems(id='prog-len-filter-slider', labelStyle={'display': 'inline-block'}),
 
@@ -934,7 +934,11 @@ def specific_feature_occurrence(specific_f_index, result_data, ori_df):
 def update_co_occurrence_bar(specific_f_index, result_data, ori_df):
     names = ResultProcessing.read_dataset_names(ori_df)
     cooccurring_times, cooccurring_features_idx = result_data.get_cooccurrence_info_given_feature(specific_f_index)
-    if cooccurring_times is not None:  # there os co-occurrence with this feature
+    if cooccurring_times is not None:  # there is co-occurrence with this feature
+        # sort the neighbors
+        idx = np.argsort(cooccurring_times)
+        cooccurring_times = cooccurring_times[idx]
+        cooccurring_features_idx = cooccurring_features_idx[idx]
         hover_text = [names[i] for i in cooccurring_features_idx]
         features = ['f' + str(i) for i in cooccurring_features_idx]
         return {
