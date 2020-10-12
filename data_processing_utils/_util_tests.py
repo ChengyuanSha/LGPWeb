@@ -4,7 +4,7 @@ from data_processing_utils._processing_funcs import ResultProcessing
 
 
 result = ResultProcessing()
-result.load_models_from_file_path("../dataset/lgp_acc.pkl")
+result.load_models_from_file_path("../dataset/lgp_random_AD_vs_Normal.pkl")
 data = pd.read_csv('../assets/sample_data/sample_alzheimer_vs_normal.csv')
 X, y = ResultProcessing.read_dataset_X_y(data)
 names = ResultProcessing.read_dataset_names(data)
@@ -34,23 +34,23 @@ result.calculate_featureList_and_calcvariableList()
 # for i in index:
 #     print(result.model_list[i].bestEffProgStr_)
 
-# print(result.model_list[205].bestEffProgStr_)
-# s = result.convert_program_str_repr(result.model_list[205])
+print(result.model_list[571].bestEffProgStr_)
+s = result.convert_program_str_repr(result.model_list[571], names)
+print(s)
+# -----test get_feature_co_occurences_matrix function----
 
-# test get_feature_co_occurences_matrix function
-
-dump = 105
-co_matrix, featureIndex = result.get_feature_co_occurences_matrix('All')
-featureIndex = np.array(featureIndex)
-if dump in featureIndex:
-    f_index = np.where(featureIndex == dump)
-    f_row = np.array(co_matrix[f_index])
-    nonzero_index = np.where(co_matrix[f_index]>0)
-    cooccurring_times = f_row[nonzero_index]
-    cooccurring_features = featureIndex[nonzero_index[1]]
-
-a , b = result.get_cooccurrence_info_given_feature(105)
-print(a, b)
+# dump = 105
+# co_matrix, featureIndex = result.get_feature_co_occurences_matrix('All')
+# featureIndex = np.array(featureIndex)
+# if dump in featureIndex:
+#     f_index = np.where(featureIndex == dump)
+#     f_row = np.array(co_matrix[f_index])
+#     nonzero_index = np.where(co_matrix[f_index]>0)
+#     cooccurring_times = f_row[nonzero_index]
+#     cooccurring_features = featureIndex[nonzero_index[1]]
+#
+# a , b = result.get_cooccurrence_info_given_feature(105)
+# print(a, b)
 # hover_text = []
 # for yi, yy in enumerate(featureIndex):
 #     hover_text.append([])
