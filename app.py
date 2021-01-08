@@ -105,8 +105,8 @@ app.layout = html.Div(
                 '''
                 ##### SMILE is a bioinformatic framework that learns interpretable predictive models and identifies key metabolites 
                 ##### and their interactions explaining a complex trait. To use SMILE, please follow these easy steps.
-                1. Format the input data where rows are samples and columns are the label (first column named category)   
-                and features (metabolite concentrations). Data also need to be imputed and normalized.
+                1. Format the input data where rows are samples and columns are the label (first column) and features (metabolite concentrations). 
+                Data should be imputed and normalized.
                 2. Download and run the SMILE algorithm. All the source code and documentation can be found 
                 on [Github](https://github.com/ChengyuanSha/linear_genetic_programming).
                 3. Upload the result file and the original data here to visualize and interpret the learning results.
